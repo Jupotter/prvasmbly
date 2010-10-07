@@ -1,0 +1,5 @@
+"Rule: ocaml: ml -> cmo & cmi (%=main )": "]bGhM\1567df2`A\155\178\133K"
+"Rule: ocaml: ml & cmi -> cmx & o (%=main )": "31\n\153k\199\163\155}%\169\191\167\187\184\213"
+"Resource: /home/Raphael/Bureau/Projet SPE/main.ml": "\181i/\205\190a\190\230\137\232?8@e\209t"
+"Rule: ocaml: cmx* & o* -> native (%=main )": "=b\205S8\163mA\007\230,\027Cb\180\244"
+"Rule: ocaml dependencies ml (%=main )": "A\129>t\185j\202\131\199\168\012\130\215>)\216"
