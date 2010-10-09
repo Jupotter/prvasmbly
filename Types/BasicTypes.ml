@@ -8,10 +8,21 @@ class color =
 	method get_g = g;
 	method get_b = b;
 	method get_a = a;
+
+	method get_r_int = int_of_float(r *. 255.0);
+	method get_g_int = int_of_float(g *. 255.0);
+	method get_b_int = int_of_float(b *. 255.0);
+	method get_a_int = int_of_float(a *. 255.0);
+
 	method set_r value = r <- value;
 	method set_g value = g <- value;
 	method set_b value = b <- value;
 	method set_a value = a <- value;
+
+	method set_r_int value = r <- float_of_int(value) /. 255.0;
+	method set_g_int value = g <- float_of_int(value) /. 255.0;
+	method set_b_int value = b <- float_of_int(value) /. 255.0;
+	method set_a_int value = a <- float_of_int(value) /. 255.0;
 
 	method set_rgb red green blue = 
 		r <- red;
@@ -78,7 +89,7 @@ class color =
 		b <- b /. 2.0;
 		a <- a /. 2.0;
 
-	end;;
+end;;
 
 
 
@@ -86,13 +97,23 @@ class file_in (f:string) =
    object(self)
 	val mutable filestream = open_in_bin f;
 	method read_byte = input_byte filestream;
+
 	method read_n_byte = function
 		|0 -> []
 		|n -> self#read_byte::(self#read_n_byte (n-1));
+
 	method read_char = char_of_int(input_byte filestream);
+
 	method read_n_char = function
 		|0 -> []
 		|n -> self#read_char::(self#read_n_char (n-1));
+
+	method read_int = 
+		let a0 = self#read_byte in
+		let a1 = self#read_byte in
+		let a2 = self#read_byte in
+		let a3 = self#read_byte in
+		a0 + a1 * 255 + a2 * 255 * 255 + a3 * 255 * 255;
 
 	method read_color_rgba =
 		let c = new color in
@@ -110,7 +131,25 @@ class file_in (f:string) =
 		c#set_rgb_int r g b;
 		c;
 		
-   end;;
+end;;
+
+class file_out (f:string) =
+	object(self)
+	val mutable filestream = open_out_bin f;
+
+	method write_byte byte = output_byte filestream byte;
+
+	method write_color_rgb (c:color) =
+		self#write_byte c#get_r_int;
+		self#write_byte c#get_g_int;
+		self#write_byte c#get_b_int;
+	method write_color_rgba (c:color) =
+		self#write_byte c#get_r_int;
+		self#write_byte c#get_g_int;
+		self#write_byte c#get_b_int;
+		self#write_byte c#get_a_int;
+	
+end;;
 
 class image (image_width:int) (image_height:int) =
    object(self) 
@@ -136,7 +175,9 @@ class image (image_width:int) (image_height:int) =
 		raw_data.((y * h + x) * 4 + 3) <- c#get_a;
 
 	method height = h
+
 	method width = w
+
 	method merge (i:image) = 
 		let minh = min i#height h in
 		let minw = min i#width w in
@@ -151,9 +192,10 @@ class image (image_width:int) (image_height:int) =
 	method foreach_pixel (func:color->color) = 
 		for x = 0 to h - 1 do
 			for y = 0 to w - 1 do
-				self#set_pixel ( func (self#get_pixel x y ) ) x y ;
+				self#set_pixel 
+					( func (self#get_pixel x y ) ) x y ;
 			done;
 		done;
 
-   end;;
+end;;
 
