@@ -8,6 +8,10 @@ class color =
 	method get_g = g;
 	method get_b = b;
 	method get_a = a;
+	method set_r value = r <- value;
+	method set_g value = g <- value;
+	method set_b value = b <- value;
+	method set_a value = a <- value;
 
 	method set_rgb red green blue = 
 		r <- red;
@@ -23,7 +27,7 @@ class color =
 		b <- (float_of_int blue) /. 255.0;
 
 	method set_rgba_int red green blue alpha= 
-		self#set_rgb_byte red green blue;
+		self#set_rgb_int red green blue;
 		a <- (float_of_int alpha) /. 255.0; 
 
 	method set_rgb_byte red green blue = 
@@ -35,7 +39,6 @@ class color =
 	method set_rgba_byte red green blue alpha = 
 		self#set_rgb_byte red green blue;
 		a <- (float_of_int (int_of_char alpha)) /. 255.0; 
-
 	method to_list_rgba = 
 		[r;g;b;a]
 	method to_list_bgra = 
@@ -81,8 +84,32 @@ class color =
 
 class file_in (f:string) = 
    object(self)
-	val mutable filestream = open_in f;
-	method read = input filestream;
+	val mutable filestream = open_in_bin f;
+	method read_byte = input_byte filestream;
+	method read_n_byte = function
+		|0 -> []
+		|n -> self#read_byte::(self#read_n_byte (n-1));
+	method read_char = char_of_int(input_byte filestream);
+	method read_n_char = function
+		|0 -> []
+		|n -> self#read_char::(self#read_n_char (n-1));
+
+	method read_color_rgba =
+		let c = new color in
+		let r = self#read_byte in
+		let g = self#read_byte in
+		let b = self#read_byte in
+		let a = self#read_byte in
+		c#set_rgba_int r g b a;
+		c;
+	method read_color_rgb = 
+		let c = new color in
+		let r = self#read_byte in
+		let g = self#read_byte in
+		let b = self#read_byte in
+		c#set_rgb_int r g b;
+		c;
+		
    end;;
 
 class image (image_width:int) (image_height:int) =
