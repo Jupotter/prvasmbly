@@ -113,7 +113,7 @@ class file_in (f:string) =
 		let a1 = self#read_byte in
 		let a2 = self#read_byte in
 		let a3 = self#read_byte in
-		a0 + a1 * 255 + a2 * 255 * 255 + a3 * 255 * 255;
+		a0 + a1 * 256 + a2 * 256 * 256 + a3 * 256 * 256 * 256;
 
 	method read_color_rgba =
 		let c = new color in
