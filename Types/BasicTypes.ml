@@ -130,6 +130,8 @@ class file_in (f:string) =
 		let b = self#read_byte in
 		c#set_rgb_int r g b;
 		c;
+        method get_pos = pos_in filestream;
+        method seek_pos p = seek_in filestream p;
 		
 end;;
 
