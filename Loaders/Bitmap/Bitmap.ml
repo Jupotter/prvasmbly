@@ -45,10 +45,9 @@ let read_bmp_32 (f:file_in) h w p =
         let _ = print_int (f#get_pos ) in
         let _ = for i = h-1 downto 0 do
                 for j = 0 to w-1 do
+			let _ = f#read_byte in
                         let col = f#read_color_rgba in
                                 begin
-                                col#set_r (col#get_a);
-                                col#set_a (1.0);
                                 (*print_int i; print_string ", ";
                                 print_int j; print_newline ();*)
                                 image#set_pixel col j i;
@@ -72,7 +71,8 @@ let read_bmp_24 (f:file_in) h w p =
                                 end
                 done;
                 for j = w*3 to ((3*w/4+1)*4)-1 do
-                        f#read_byte
+                        let _ = f#read_byte in
+			();
                 done
                 end
         done
