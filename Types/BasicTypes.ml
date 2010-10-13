@@ -89,6 +89,10 @@ class color =
 		b <- b /. 2.0;
 		a <- a /. 2.0;
 
+	method equal (c:color) = 
+		(r = c#get_r && g = c#get_g && b = c#get_b && a = c#get_a);
+	method notequal (c:color) = 
+		(r <> c#get_r && g <> c#get_g && b <> c#get_b && a <> c#get_a);
 end;;
 
 
@@ -159,6 +163,15 @@ class image (image_width:int) (image_height:int) =
 	val mutable raw_data = 
 		Array.make (image_height * image_width * 4) 0.0;
 
+	method get_pixel_at_address (add:int) = 
+		let c = new color in
+			c#set_rgba 
+				raw_data.( add * 4 )
+				raw_data.( add * 4 + 1)
+				raw_data.( add * 4 + 2)
+				raw_data.( add * 4 + 3);
+			c;
+
 	method get_pixel (x:int) (y:int) = 
 		let c = new color in
 			c#set_rgba 
@@ -167,6 +180,12 @@ class image (image_width:int) (image_height:int) =
 				raw_data.((y * h + x) * 4 + 2)
 				raw_data.((y * h + x) * 4 + 3);
 			c;
+
+	method set_pixel_at_address (c:color) (add:int) =
+		raw_data.(add * 4) <- c#get_r;
+		raw_data.(add * 4 + 1) <- c#get_g;
+		raw_data.(add * 4 + 2) <- c#get_b;
+		raw_data.(add * 4 + 3) <- c#get_a;
 
 	method set_pixel (c:color) (x:int) (y:int) =
 		raw_data.((y * h + x) * 4) <- c#get_r;
@@ -189,6 +208,14 @@ class image (image_width:int) (image_height:int) =
 			done;
 		done;
 		;
+	method foreach_tested_pixel (test:color->bool) (func:color->color) = 
+		for x = 0 to h - 1 do
+			for y = 0 to w - 1 do
+				if test (self#get_pixel x y) then
+				self#set_pixel 
+					( func (self#get_pixel x y ) ) x y ;
+			done;
+		done;
 	method foreach_pixel (func:color->color) = 
 		for x = 0 to h - 1 do
 			for y = 0 to w - 1 do
