@@ -1,6 +1,7 @@
 GRAPHICSLIB= bigarray.cmxa -I +lablGL lablgl.cmxa lablglut.cmxa -I +sdl sdl.cmxa sdlloader.cmxa
 PROJECTLIB= -I 3DEngine/ 3DEngine/Engine.cmx -I Loaders/Bitmap/  Loaders/Bitmap/Bitmap.cmx -I Loaders/Wavefront Loaders/Wavefront/Wavefront.cmx -I Analyzer/ Analyzer/Analyzer.cmx -I Interface/ Interface/Interface.cmx
 TYPESLIB= -I Types/ Types/BasicTypes.cmx
+PCKMANAGER= yum
 build:  start build.BasicTypes.cmx build.Loaders.cmx build.Analyzer.cmx build.3DEngine.cmx build.Interf.cmx
 	@echo -n "generation de l'executable ...  :  "
 	@ocamlopt -o project.elf ${GRAPHICSLIB}  ${TYPESLIB}  ${PROJECTLIB} str.cmxa unix.cmxa  main.ml
@@ -72,3 +73,15 @@ test: build clean
 	@echo "test du résultat ..."
 	@(./project.elf)
 	@echo " "
+
+install.packs:
+	@${PCKMANAGER} reinstall ocaml
+	@${PCKMANAGER} reinstall ocaml-devel
+	@${PCKMANAGER} reinstall ocaml-lablgl
+	@${PCKMANAGER} reinstall ocaml-lablgl-devel
+	@${PCKMANAGER} reinstall ocaml-SDL
+	@${PCKMANAGER} reinstall ocaml-SDL-devel
+	@${PCKMANAGER} reinstall SDL
+	@${PCKMANAGER} reinstall SDL-devel
+	@${PCKMANAGER} reinstall SDL_image
+
