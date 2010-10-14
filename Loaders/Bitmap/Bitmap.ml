@@ -69,8 +69,13 @@ let save_image_bmp (i:image) (s:string) =
 	f#write_byte 0;
 	f#write_byte 0;
 	end in
-	();;
-
+        let _ = for k = h-1 downto 0 do
+                for j = 0 to w-1 do
+			f#write_color_rgb (i#get_pixel j k);
+			f#write_byte 0
+                done
+	done
+	in ();;
 
 type bmp_header = {
         fsize : int;
@@ -117,8 +122,8 @@ let read_bmp_32 (f:file_in) head =
         let _ = print_int (f#get_pos ) in
         let _ = for i = h-1 downto 0 do
                 for j = 0 to w-1 do
+                        let col = f#read_color_rgb in
 			let _ = f#read_byte in
-                        let col = f#read_color_rgba in
                                 begin
                                 (*print_int i; print_string ", ";
                                 print_int j; print_newline ();*)
