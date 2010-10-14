@@ -100,6 +100,10 @@ end;;
 class file_in (f:string) = 
    object(self)
 	val mutable filestream = open_in_bin f;
+
+        method get_pos = pos_in filestream;
+        method seek_pos p = seek_in filestream p;
+
 	method read_byte = input_byte filestream;
 
 	method read_n_byte = function
