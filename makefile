@@ -10,7 +10,7 @@ build.bytecode:
 	@ocamlc -o project.bytecode -I +lablGL lablgl.cma lablglut.cma  str.cma unix.cma  main.ml
 build.BasicTypes.cmx:
 	@echo -n "generation des types basique ...  :  "
-	@(cd Types/ && ocamlopt -c BasicTypes.cmx *.ml)
+	@(cd Types/ && ocamlopt ${GRAPHICSLIB} -c BasicTypes.cmx *.ml)
 	@echo "[REUSSIT]"
 
 build.3DEngine.cmx:

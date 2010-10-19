@@ -14,6 +14,35 @@ class color =
 	method get_b_int = int_of_float(b *. 255.0);
 	method get_a_int = int_of_float(a *. 255.0);
 
+	method get_rgba = (r,g,b,a);
+	method get_rgb = (r,g,b);
+	method get_rgba_byte = (
+		int_of_float(r*.255.0),
+		int_of_float(g*.255.0),
+		int_of_float(b*.255.0),
+		int_of_float(a*.255.0));
+	method get_rgb_byte = (
+		int_of_float(r*.255.0),
+		int_of_float(g*.255.0),
+		int_of_float(b*.255.0));
+	method set_rgba_pck (_r,_g,_b,_a) = 
+		r<-_r;
+		g<-_g;
+		b<-_b;
+		a<-_a;
+	method set_rgb_pck (_r,_g,_b) = 
+		r<-_r;
+		g<-_g;
+		b<-_b;
+	method set_rgba_pck_byte (_r,_g,_b,_a) = 
+		r<-float_of_int(_r)/.255.0;
+		g<-float_of_int(_g)/.255.0;
+		b<-float_of_int(_b)/.255.0;
+		a<-float_of_int(_a)/.255.0;
+	method set_rgb_pck_byte (_r,_g,_b) = 
+		r<-float_of_int(_r)/.255.0;
+		g<-float_of_int(_g)/.255.0;
+		b<-float_of_int(_b)/.255.0;
 	method set_r value = r <- value;
 	method set_g value = g <- value;
 	method set_b value = b <- value;
@@ -93,6 +122,11 @@ class color =
 		(r = c#get_r && g = c#get_g && b = c#get_b && a = c#get_a);
 	method notequal (c:color) = 
 		(r <> c#get_r && g <> c#get_g && b <> c#get_b && a <> c#get_a);
+	method to_int32 = Int32.of_int( 
+		int_of_float(r) +
+		int_of_float(g) * 255 +
+		int_of_float(b) * 255 * 255 +
+		int_of_float(a) * 255 * 255 * 255);
 end;;
 
 
@@ -100,10 +134,6 @@ end;;
 class file_in (f:string) = 
    object(self)
 	val mutable filestream = open_in_bin f;
-
-        method get_pos = pos_in filestream;
-        method seek_pos p = seek_in filestream p;
-
 	method read_byte = input_byte filestream;
 
 	method read_n_byte = function
@@ -164,38 +194,27 @@ class image (image_width:int) (image_height:int) =
 
 	val mutable h = image_height;
 	val mutable w = image_width;
-	val mutable raw_data = 
-		Array.make (image_height * image_width * 4) 0.0;
+	val mutable raw_data = Sdlvideo.create_RGB_surface [`SWSURFACE] image_width image_height 32  8l 8l 8l 8l;
+		
 
 	method get_pixel_at_address (add:int) = 
 		let c = new color in
-			c#set_rgba 
-				raw_data.( add * 4 )
-				raw_data.( add * 4 + 1)
-				raw_data.( add * 4 + 2)
-				raw_data.( add * 4 + 3);
-			c;
+		c#set_rgb_pck_byte((Sdlvideo.get_pixel_color raw_data (add / w) (add mod w)));
+		c
 
 	method get_pixel (x:int) (y:int) = 
 		let c = new color in
-			c#set_rgba 
-				raw_data.((y * h + x) * 4)
-				raw_data.((y * h + x) * 4 + 1)
-				raw_data.((y * h + x) * 4 + 2)
-				raw_data.((y * h + x) * 4 + 3);
-			c;
+		c#set_rgb_pck_byte((Sdlvideo.get_pixel_color raw_data x y));
+		c
 
 	method set_pixel_at_address (c:color) (add:int) =
-		raw_data.(add * 4) <- c#get_r;
-		raw_data.(add * 4 + 1) <- c#get_g;
-		raw_data.(add * 4 + 2) <- c#get_b;
-		raw_data.(add * 4 + 3) <- c#get_a;
-
+		Sdlvideo.put_pixel raw_data (add / w) (add mod w) c#to_int32
 	method set_pixel (c:color) (x:int) (y:int) =
-		raw_data.((y * h + x) * 4) <- c#get_r;
-		raw_data.((y * h + x) * 4 + 1) <- c#get_g;
-		raw_data.((y * h + x) * 4 + 2) <- c#get_b;
-		raw_data.((y * h + x) * 4 + 3) <- c#get_a;
+		Sdlvideo.put_pixel_color raw_data x y c#get_rgb_byte
+	method load_file (f:string)= 
+		raw_data <- Sdlloader.load_image f;
+		w<-(Sdlvideo.surface_info raw_data).Sdlvideo.w;
+		h<-(Sdlvideo.surface_info raw_data).Sdlvideo.h;
 
 	method height = h
 
