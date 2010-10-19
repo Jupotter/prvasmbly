@@ -12,13 +12,14 @@ let save_image_bmp (i:image) (s:string) =
 	let f = new file_out s in
 	let (h,w) = (i#height,i#width) in
 	let size = h * w * 4 + 54 in
+	let _ = begin print_int size;print_newline ();end in
 	let _ =
 	begin
 	f#write_byte 66;
 	f#write_byte 77;
 	f#write_byte (size mod 256);
-	f#write_byte ((size mod 256) /256);
-	f#write_byte ((size mod 256*256) /(256*256));
+	f#write_byte ((size / 256) mod 256);
+	f#write_byte ((size / 256*256) mod(256*256));
 	f#write_byte (size / (256*256*256));
 	f#write_byte 0;
 	f#write_byte 0;
@@ -33,13 +34,13 @@ let save_image_bmp (i:image) (s:string) =
 	f#write_byte 0;
 	f#write_byte 0;
 	f#write_byte (w mod 256);
-	f#write_byte ((w mod 256) /256);
-	f#write_byte ((w mod 256*256) /(256*256));
-	f#write_byte (w / (256*256*256));
-	f#write_byte (h mod 256);
-	f#write_byte ((h mod 256) /256);
-	f#write_byte ((h mod 256*256) /(256*256));
+	f#write_byte ((h / 256) mod 256);
+	f#write_byte ((h / 256*256) mod(256*256));
 	f#write_byte (h / (256*256*256));
+	f#write_byte (h mod 256);
+	f#write_byte ((w / 256) mod 256);
+	f#write_byte ((w / 256*256) mod(256*256));
+	f#write_byte (w / (256*256*256));
 	f#write_byte 1;
 	f#write_byte 0;
 	f#write_byte 32;

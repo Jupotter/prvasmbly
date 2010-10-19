@@ -6,6 +6,11 @@ let sdl_init () =
 
 let main() = 
 	sdl_init();
+
+	let dif = new BasicTypes.image 1 1 in
+	let _ = dif#load_file "diff_test.bmp" in
+	let _ = Analyzer.double_diff dif in
+	Bitmap.save_image_bmp dif "diff.bmp"
 	
 	let win = new Engine.window in
 	let msh = Engine.create_grild 100 100 in

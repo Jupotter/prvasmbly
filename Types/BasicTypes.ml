@@ -181,13 +181,13 @@ class file_out (f:string) =
 	method write_byte byte = output_byte filestream byte;
 
 	method write_color_rgb (c:color) =
-		self#write_byte c#get_r_int;
-		self#write_byte c#get_g_int;
 		self#write_byte c#get_b_int;
+		self#write_byte c#get_g_int;
+		self#write_byte c#get_r_int;
 	method write_color_rgba (c:color) =
-		self#write_byte c#get_r_int;
-		self#write_byte c#get_g_int;
 		self#write_byte c#get_b_int;
+		self#write_byte c#get_g_int;
+		self#write_byte c#get_r_int;
 		self#write_byte c#get_a_int;
 	
 end;;
