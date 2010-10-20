@@ -60,6 +60,19 @@ for x=0 to (i#width-1) do
 	done
 done
 
+(* Put a grid of n pixel on an image *)
+
+let grid i n = 
+for x=0 to (i#width-1) do
+	for y=0 to (i#height)-1 do
+	let col = new color in
+	let _ = col#set_rgb 0. 0. 0. in
+		if ((x mod n =0)||(y mod n = 0)||(x mod n + y mod n = n)) then
+			i#set_pixel col x y
+		else ()
+	done
+done
+
 (* Return the result of (diff_x(i) + diff_y(i))/2 *)
 
 let get_image_diff (i:image) = new image;;

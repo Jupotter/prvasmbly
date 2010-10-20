@@ -10,8 +10,8 @@ let main() =
 	let diff = new BasicTypes.image 1 1 in
 	let _ = diff#load_file "diff_test.bmp" in
 	let out = diff in
-	let _ = Analyzer.outlines diff out in
-	Bitmap.save_image_bmp out "outl.bmp";
+	let _ = Analyzer.grid diff 20 in
+	Bitmap.save_image_bmp diff "grid.bmp";
 
 	let win = new Engine.window in
 	let msh = Engine.create_grild 100 100 in
