@@ -33,6 +33,33 @@ for x=0 to (i#width-1) do
 	done
 done
 
+(* Outlines on a black image *)
+
+let outlines i out =
+for x=0 to (i#width-1) do
+	for y=0 to (i#height)-1 do
+	let col = 
+		let pix = i#get_pixel x y in
+		if ((x < (i#width-1))
+		   && ((pix#get_rgb) <> (let n=i#get_pixel (x+1) y in n#get_rgb))) then
+			let col = new color in
+				col#set_rgb 1. 1. 1.;
+				col
+		else
+		if ((y < (i#height-1))
+		   && ((pix#get_rgb) <> (let n=i#get_pixel x (y+1) in n#get_rgb))) then
+			let col = new color in
+				col#set_rgb 1. 1. 1.;
+				col
+		else
+		let col = new color in
+			col#set_rgb 0. 0. 0.;
+			col
+	in
+		(out#set_pixel col x y) 
+	done
+done
+
 (* Return the result of (diff_x(i) + diff_y(i))/2 *)
 
 let get_image_diff (i:image) = new image;;
