@@ -168,10 +168,8 @@ class file_in (f:string) =
 		let b = self#read_byte in
 		c#set_rgb_int r g b;
 		c;
-
-                method get_pos = pos_in filestream;
-                method seek_pos p = seek_in filestream p;
-		
+	method get_pos = pos_in filestream;
+        method seek_pos p = seek_in filestream p;
 end;;
 
 class file_out (f:string) =
@@ -179,15 +177,16 @@ class file_out (f:string) =
 	val mutable filestream = open_out_bin f;
 
 	method write_byte byte = output_byte filestream byte;
-
+	method write_char chr = output_char filestream chr;
+	method write_string strng = output_string filestream strng;
 	method write_color_rgb (c:color) =
-		self#write_byte c#get_b_int;
-		self#write_byte c#get_g_int;
 		self#write_byte c#get_r_int;
+		self#write_byte c#get_g_int;
+		self#write_byte c#get_b_int;
 	method write_color_rgba (c:color) =
-		self#write_byte c#get_b_int;
-		self#write_byte c#get_g_int;
 		self#write_byte c#get_r_int;
+		self#write_byte c#get_g_int;
+		self#write_byte c#get_b_int;
 		self#write_byte c#get_a_int;
 	
 end;;
@@ -218,7 +217,8 @@ class image (image_width:int) (image_height:int) =
 		raw_data <- Sdlloader.load_image f;
 		w<-(Sdlvideo.surface_info raw_data).Sdlvideo.w;
 		h<-(Sdlvideo.surface_info raw_data).Sdlvideo.h;
-
+	method save_file (f:string)= 
+		Sdlvideo.save_BMP raw_data f;
 	method height = h
 
 	method width = w
@@ -247,6 +247,13 @@ class image (image_width:int) (image_height:int) =
 			for y = 0 to w - 1 do
 				self#set_pixel 
 					( func (self#get_pixel x y ) ) x y ;
+			done;
+		done;
+
+	method iter (func:color->unit) = 
+		for x = 0 to h - 1 do
+			for y = 0 to w - 1 do
+				 func (self#get_pixel x y );
 			done;
 		done;
 

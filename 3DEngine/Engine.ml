@@ -54,13 +54,18 @@ class vertex =
 		method get_z = z;
 		method get_xyz = (x,y,z);
 		method apply_height (img:image) =
-			y <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) )#get_r;
+			y <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) )#get_g;
 		method apply_color (img:image) =
 			c <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) );
 		method move (mx,my,mz) = 
 			x<-x+.mx;
 			y<-y+.my;
 			z<-z+.mz;
+		method to_string = 
+			"v " ^ string_of_float(x) ^ " " ^
+			string_of_float(y) ^ " " ^
+			string_of_float(z) ^ "\n";
+
 		method set_x value = x <- value;
 		method set_y value = y <- value;
 		method set_z value = z <- value;
@@ -105,13 +110,25 @@ class polygon = object(self)
 	method get_vertex_2 = v2; 
 	method get_vertex_3 = v3;
 	method get_vertices = (v1,v2,v3);
-	method uniform = 
-		v2#move(1.0,0.0,0.0);
-		v3#move(0.0,0.0,1.0);
-	method reverse_uniform = 
-		v2#move(1.0,0.0,0.0);
-		v3#move(0.0,0.0,1.0);
-		v1#move(1.0,0.0,1.0);
+	method save_vertices (file:BasicTypes.file_out) =
+		file#write_string (v1#to_string);
+		file#write_string (v2#to_string);
+		file#write_string (v3#to_string);
+	method save_face off_set (file:BasicTypes.file_out) =
+		file#write_string 
+			("f " ^ string_of_int(!off_set) ^
+			" " ^ string_of_int(!off_set + 1) ^
+			" " ^ string_of_int(!off_set + 2) ^
+			"\n");
+		off_set := (!off_set) + 3;
+
+	method uniform size= 
+		v2#move(size,0.0,0.0);
+		v3#move(0.0,0.0,size);
+	method reverse_uniform size = 
+		v2#move(size,0.0,0.0);
+		v3#move(0.0,0.0,size);
+		v1#move(size,0.0,size);
 	method move (mx,my,mz) = 
 		v1#move(mx,my,mz);
 		v2#move(mx,my,mz);
@@ -131,6 +148,8 @@ class polygon = object(self)
 	method clone = 
 		let p = new polygon in 
 		p#set_vertices (v1,v2,v3);
+	method subdivide = ();
+		
 end;;
 
 
@@ -141,16 +160,28 @@ class mesh = object(self)
 	val mutable x = 0.0
 	val mutable y = 0.0
 	val mutable z = 0.0
-	val mutable sx = 1.0
+	val mutable sx = 0.1
 	val mutable sy = 10.0
-	val mutable sz = 1.0
+	val mutable sz = 0.1
+	method get_polygons = plg_list;
+	method merge (m:mesh) =
+		plg_list<-plg_list@m#get_polygons;
+				
 	method get_position = (x,y,z);
+	method get_scale = (sx,sy,sz);
 	method set_position (vx,vy,vz) = 
 		x <- vx;
 		y <- vy;
 		z <- vz;
+	method set_scale (vx,vy,vz) = 
+		sx <- vx;
+		sy <- vy;
+		sz <- vz;
+	method move (mx,my,mz) = 
+		x<-x+.mx;
+		y<-y+.my;
+		z<-z+.mz;
 
-		
 	method add_polygon plg = plg_list <- plg::plg_list;
  	method add_polygon_list = function
 		|[] -> ()
@@ -162,6 +193,11 @@ class mesh = object(self)
 
 	method map func = plg_list <- List.map func plg_list;
 	method iter func = List.iter func plg_list;
+	method save file = 
+		let ot = new BasicTypes.file_out file in
+		let off_set = ref 1 in
+		self#iter (fun (p:polygon) -> (p#save_vertices ot));
+		self#iter (fun (p:polygon) -> p#save_face off_set ot);
 	method draw = 
 		
 
@@ -201,16 +237,16 @@ class mesh = object(self)
 end;;
 
 
-let create_grild size_x size_y = 
+let create_grild size_x size_y step = 
 	let m = new mesh in
-	for x = 0 to size_x do
-		for y = 0 to size_y do
+	for x = 0 to (size_x/int_of_float(step))-1 do
+		for y = 0 to (size_y/int_of_float(step))-1 do
 			let plg1 = new polygon in
-			plg1#uniform;
-			plg1#move(float_of_int(x), 0.0, float_of_int(y));
+			plg1#uniform step;
+			plg1#move(float_of_int(x )*. step, 0.0, float_of_int(y )*. step);
 			let plg2 = new polygon in
-			plg2#reverse_uniform;
-			plg2#move(float_of_int(x), 0.0, float_of_int(y));
+			plg2#reverse_uniform step;
+			plg2#move(float_of_int(x )*. step, 0.0, float_of_int(y )*. step);
 			m#add_polygon plg1;
 			m#add_polygon plg2;
 		done;
@@ -281,6 +317,8 @@ class window =
 					{Sdlevent.keysym=Sdlkey.KEY_LEFT} -> c_cam#move(0.2,0.0,0.0);
 				|Sdlevent.KEYDOWN 
 					{Sdlevent.keysym=Sdlkey.KEY_RIGHT} -> c_cam#move(-0.2,0.0,0.0);
+				|Sdlevent.KEYDOWN 
+					{Sdlevent.keysym=Sdlkey.KEY_u} -> c_cam#move(0.0,2.0,0.0);
 				|Sdlevent.KEYDOWN 
 					{Sdlevent.keysym=Sdlkey.KEY_w} -> _wireframe <- (if _wireframe then false else true);
 				|Sdlevent.QUIT -> exit 0;
