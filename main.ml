@@ -32,7 +32,9 @@ let main() =
 		Bitmap.save_image_bmp outmap "outmap.bmp";
 	let outmap = map in
 		let _ = Analyzer.outlines map outmap in
-		Bitmap.save_image_bmp outmap "outmapB.bmp"
+		Bitmap.save_image_bmp outmap "outmapB.bmp";
+	let div2 = Analyzer.div_two map in
+		Bitmap.save_image_bmp div2 "div2.bmp"
 
 let _ = main();
 
