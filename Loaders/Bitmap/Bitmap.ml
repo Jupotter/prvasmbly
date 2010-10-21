@@ -12,7 +12,6 @@ let save_image_bmp (i:image) (s:string) =
 	let f = new file_out s in
 	let (h,w) = (i#height,i#width) in
 	let size = h * w * 4 + 54 in
-	let _ = begin print_int size;print_newline ();end in
 	let _ =
 	begin
 	f#write_byte 66;

@@ -4,10 +4,10 @@ let sdl_init () =
     Sdlevent.enable_events Sdlevent.all_events_mask;
   end
 
-let main() = 
+let main() =
 	sdl_init();
-	
-	let win = new Engine.window in
+
+(*	let win = new Engine.window in
 	let msh = Engine.create_grild 512 512 10.0 in
 	let hmap = new BasicTypes.image 1 1 in
 	hmap#load_file "carte.bmp";
@@ -24,7 +24,15 @@ let main() =
 		win#events;
 		win#draw;
 	done
-
+*)
+	let map = new BasicTypes.image 1 1 in
+	map#load_file "carte.bmp";
+	let outmap = map in
+		let _ = Analyzer.double_diff outmap in
+		Bitmap.save_image_bmp outmap "outmap.bmp";
+	let outmap = map in
+		let _ = Analyzer.outlines map outmap in
+		Bitmap.save_image_bmp outmap "outmapB.bmp"
 
 let _ = main();
 
