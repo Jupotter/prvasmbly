@@ -61,6 +61,9 @@ class vertex =
 			x<-x+.mx;
 			y<-y+.my;
 			z<-z+.mz;
+
+		(*used by mesh to save a polygon*)
+		(*useless outside a mesh*)
 		method to_string = 
 			"v " ^ string_of_float(x) ^ " " ^
 			string_of_float(y) ^ " " ^
@@ -86,7 +89,10 @@ class vertex =
 		method clone = 
 			let v = new vertex in 
 			v#set_xyz (x,y,z);
+			v;
 end;;
+
+(*create a polygon*)
 class polygon = object(self)
 	val mutable v1 = new vertex;
 	val mutable v2 = new vertex;
@@ -110,10 +116,14 @@ class polygon = object(self)
 	method get_vertex_2 = v2; 
 	method get_vertex_3 = v3;
 	method get_vertices = (v1,v2,v3);
+	(*used by mesh to save a polygon*)
+	(*do not use outside a mesh*)
 	method save_vertices (file:BasicTypes.file_out) =
 		file#write_string (v1#to_string);
 		file#write_string (v2#to_string);
 		file#write_string (v3#to_string);
+	(*used by mesh to save a polygon*)
+	(*do not use outside a mesh*)
 	method save_face off_set (file:BasicTypes.file_out) =
 		file#write_string 
 			("f " ^ string_of_int(!off_set) ^
@@ -122,9 +132,12 @@ class polygon = object(self)
 			"\n");
 		off_set := (!off_set) + 3;
 
+	(*create a uniform polygon with the specified size*)
 	method uniform size= 
 		v2#move(size,0.0,0.0);
 		v3#move(0.0,0.0,size);
+	(*create a uniform polygon with the specified size*)
+	(*and reverse the vertex 0*)
 	method reverse_uniform size = 
 		v2#move(size,0.0,0.0);
 		v3#move(0.0,0.0,size);
@@ -147,13 +160,71 @@ class polygon = object(self)
 		v3#draw;
 	method clone = 
 		let p = new polygon in 
-		p#set_vertices (v1,v2,v3);
-	method subdivide = ();
+		p#set_vertices (v1#clone,v2#clone,v3#clone);
+		p;
+	method reverse = 
+		v1#set_x ( v2#get_x );
+		v1#set_z ( v3#get_z );
+	method subdivide = 
+		let sv1 = new vertex in
+		sv1#set_xyz(
+			(v2#get_x +. v1#get_x)/.2.0,
+			(v2#get_y +. v1#get_y)/.2.0,
+			(v2#get_z +. v1#get_z)/.2.0);
+		let sv2 = new vertex in
+		sv2#set_xyz(
+			(v3#get_x +. v1#get_x)/.2.0,
+			(v3#get_y +. v1#get_y)/.2.0,
+			(v3#get_z +. v1#get_z)/.2.0);
+		let sv3 = new vertex in
+		sv3#set_xyz(
+			(v3#get_x +. v2#get_x)/.2.0,
+			(v3#get_y +. v2#get_y)/.2.0,
+			(v3#get_z +. v2#get_z)/.2.0);
+		let p1 = new polygon in
+		p1#set_vertices(v1, sv1, sv2);
+		let p2 = new polygon in
+		p2#set_vertices(sv1, v2, sv3);
+		let p3 = new polygon in
+		p3#set_vertices (sv2,v3,sv3);
+		let p4 = new polygon in
+		p4#set_vertices (sv1,sv2,sv3);
+		p1::p2::p3::p4::[];
 		
 end;;
 
 
+class box = object(self)
+	val mutable sx = 0.0;
+	val mutable sy = 0.0;
+	val mutable ex = 0.5;
+	val mutable ey = 0.5;
 
+	method get_position = (sx,sy);
+	method get_size = (ex, ey);
+	method set_position (x,y) =
+		sx <- x;
+		sy <- y;
+	method set_size (x,y) =
+		ex <- x;
+		ey <- y;
+	method move (x,y) =
+		sx <- sx +. x;
+		sy <- sy +. y;
+	method draw = 
+			GlMat.push();
+			GlMat.load_identity();
+			GlMat.scale ~x:ex ~y:ey ~z:1.0 ();
+			GlMat.translate ~x:sx ~y:sy ~z:0.0 ();
+			GlDraw.begins `triangles;
+				GlDraw.vertex3 (0.0, 0.0, 0.0);
+				GlDraw.vertex3 (1.0, 0.0, 0.0);
+				GlDraw.vertex3 (1.0, 1.0, 0.0);
+				GlDraw.vertex3 (0.0, 1.0, 0.0);
+			GlDraw.ends();
+			GlMat.pop();
+end;;
+(* create a mesh *)
 class mesh = object(self)
 	val mutable plg_list = ([]:polygon list)
 	val mutable _locked = false
@@ -166,7 +237,25 @@ class mesh = object(self)
 	method get_polygons = plg_list;
 	method merge (m:mesh) =
 		plg_list<-plg_list@m#get_polygons;
-				
+	
+	(*create a grild with the specified size*)
+	(* step represent the resolution  and must be lower than scale *)
+	method add_grild position_x position_z step_x step_z scale_x scale_z =
+		let sxf = float_of_int(step_x) in
+		let szf = float_of_int(step_z) in
+		for x = 0 to (scale_x / step_x) do
+			for y = 0 to (scale_z / step_z) do
+				let plg1 = new polygon in
+				plg1#uniform sxf;
+				plg1#move(float_of_int(x * step_x + position_x), 0.0, float_of_int(y * step_z + position_z));
+				let plg2 = new polygon in
+				plg2#reverse_uniform szf;
+				plg2#move(float_of_int(x * step_x + position_x), 0.0, float_of_int(y * step_z + position_z));
+				plg_list<-(plg1#subdivide)@plg_list;
+				plg_list<-(plg2#subdivide)@plg_list;
+			done;
+		done;
+		
 	method get_position = (x,y,z);
 	method get_scale = (sx,sy,sz);
 	method set_position (vx,vy,vz) = 
@@ -193,6 +282,7 @@ class mesh = object(self)
 
 	method map func = plg_list <- List.map func plg_list;
 	method iter func = List.iter func plg_list;
+	(*save the mesh into an obj file*)
 	method save file = 
 		let ot = new BasicTypes.file_out file in
 		let off_set = ref 1 in
@@ -225,7 +315,8 @@ class mesh = object(self)
 	method apply_color (img:image) =
 		let app_plg (p:polygon) = p#apply_color img in
 		self#iter app_plg;		
-		
+	(*optimize and create a GL list with the mesh*)	
+	(*NOT YET TESTED ! DO NOT USE*)	
 	method lock = 
 		begin
 		GlDraw.begins `triangles;
@@ -239,89 +330,230 @@ end;;
 
 let create_grild size_x size_y step = 
 	let m = new mesh in
-	for x = 0 to (size_x/int_of_float(step))-1 do
-		for y = 0 to (size_y/int_of_float(step))-1 do
-			let plg1 = new polygon in
-			plg1#uniform step;
-			plg1#move(float_of_int(x )*. step, 0.0, float_of_int(y )*. step);
-			let plg2 = new polygon in
-			plg2#reverse_uniform step;
-			plg2#move(float_of_int(x )*. step, 0.0, float_of_int(y )*. step);
-			m#add_polygon plg1;
-			m#add_polygon plg2;
-		done;
-	done;
+	m#add_grild 0 0 step step size_x size_y;
 	m
 
-
-class texture (i:image) = 
+(* create a texture *)
+(* Note the image must be duplicated in order to prevent conflict*)
+class texture (i:BasicTypes.image) = 
 	object(self)
-		val mutable id = -1
+
+		(*create the openGL texture using an image*)
+		val mutable id = 
+				let localid = GlTex.gen_texture() in 
+				GlTex.bind_texture `texture_2d localid;
+				GlTex.image2d ~border:false
+					(
+					GlPix.of_raw i#get_bytes
+					~format:`rgba
+					~width: (i#width)
+					~height: (i#height)
+					);
+				List.iter (GlTex.parameter ~target:`texture_2d)
+					[ `wrap_s `clamp;
+					  `wrap_t `clamp;
+					  `mag_filter `linear;
+					  `min_filter `linear ];
+
+				localid;
+
+		(* must be call to apply this texture to a polygon*)
+		method draw =
+			GlTex.bind_texture `texture_2d id;
+			Gl.enable `texture_2d;
+			GlTex.env (`mode`decal);
+
+		(* must be call after EACH draw !!*)
+		method end_draw =
+			GlTex.env (`mode`decal);
+			Gl.disable `texture_2d;
+		
 
 end;;
+
+(* create a sprite *)
+(* Note the image must be duplicated in order to prevent conflict*)
+class sprite (i:BasicTypes.image)= object(self)
+	val mutable texture = new texture i;
+	val mutable sx = 0.0;
+	val mutable sy = 0.0;
+	val mutable ex = 1.0;
+	val mutable ey = 1.0;
+	val mutable _on_click = (fun _ -> (););
+	val mutable visible = true;
+	method get_position = (sx,sy);
+	method get_size = (ex, ey);
+	method set_position (x,y) =
+		sx <- x;
+		sy <- y;
+	method set_size (x,y) =
+		ex <- x;
+		ey <- y;
+	method move (x,y) =
+		sx <- sx +. x;
+		sy <- sy +. y;
+	method set_on_click func = _on_click <- func;
+	method hide = visible <- false;
+	method show = visible <- true;
+	(* method used by the window *)
+	method click (x,y) = 
+		if  (visible && ( sx <= x && sy <= y && x <= (sx +. ex) && y <= (sy +. ey) ) ) then _on_click();
+	method draw = 
+			if visible then
+			begin
+			GlMat.push();
+			GlMat.scale ~x:ex ~y:ey ~z:1.0 ();
+			GlMat.translate ~x:sx ~y:sy ~z:0.0 ();
+			texture#draw;
+			GlDraw.begins `triangles;
+				GlTex.coord2 (0.0, 0.0);
+				GlDraw.vertex3 (0.0, 0.0, 0.0);
+				GlTex.coord2 (1.0, 0.0);
+				GlDraw.vertex3 (1.0, 0.0, 0.0);
+				GlTex.coord2 (1.0, 1.0);
+				GlDraw.vertex3 (1.0, 1.0, 0.0);
+
+				GlTex.coord2 (1.0, 1.0);
+				GlDraw.vertex3 (1.0, 1.0, 0.0);
+				GlTex.coord2 (0.0, 0.0);
+				GlDraw.vertex3 (0.0, 0.0, 0.0);
+				GlTex.coord2 (0.0, 1.0);
+				GlDraw.vertex3 (0.0, 1.0, 0.0);
+			GlDraw.ends();
+			texture#end_draw;
+			GlMat.pop();
+			end
+			else
+				();
+end;;
+
+
+
+
 class window =
 	object(self)
 		val mutable _mesh_list = ([]:mesh list)
+		val mutable _sprite_list = ([]:sprite list)
 		val mutable _mx = 0
 		val mutable _my = 0
+		val mutable _w = 640.0
+		val mutable _h = 480.0
 		val mutable _bgcolor = new color;
 		val mutable _wireframe = false;
+		val mutable moving_up = false;
+		val mutable moving_dw = false;
+		val mutable moving_lf = false;
+		val mutable moving_rg = false;
 		val mutable display = 
 			Sdlvideo.set_video_mode 
 				~w:640 
 				~h:480 
 				~bpp:0
-				[`OPENGL ; `DOUBLEBUF];
+				[`OPENGL ; `DOUBLEBUF; `RESIZABLE];
 		val mutable c_cam = new camera;
+
+		(*get the current camera*)
+		method get_camera = c_cam;
+
 		method swap_buffers = Sdlgl.swap_buffers();
+		(*useless*)
 		method init = ();
 		method set_background_color c = _bgcolor <- c;
 		method draw_meshes = 
 			let drawmesh (m:mesh) = m#draw in
 			List.iter drawmesh _mesh_list;
+		method draw_sprites = 
+			let drawspr (s:sprite) = s#draw in
+			List.iter drawspr _sprite_list;
 		method add_mesh m = 
 			_mesh_list <- m::_mesh_list;
+		method add_sprite s = 
+			_sprite_list <- s::_sprite_list;
+		(*drawing method*)
 		method draw =
+			
   			GlClear.color 
 				(_bgcolor#get_r,
 				_bgcolor#get_g,
 				_bgcolor#get_b);
+
+			(*start to draw in 3D*)
   			GlClear.clear [`color; `depth] ;
-			GlDraw.polygon_mode `both (if _wireframe then `line else `fill);
+			GlDraw.polygon_mode `both (if _wireframe  then `line else `fill);
 			
 			c_cam#draw;
 			Gl.enable `depth_test;
 			GlDraw.color (0.3,0.7,0.4);
 			self#draw_meshes;
 
+			(*start to draw in 2D*)
+			GlDraw.polygon_mode `both `fill;
 			GlMat.mode `projection;
 			GlMat.load_identity();
 			GlMat.mode `modelview;
 			GlMat.load_identity();
-			GlDraw.begins `triangles;
-
-			GlDraw.ends();
+			GlMat.push();
+			GlMat.scale ~x:(1.0) ~y:(-1.0) ~z:1.0 ();
+			GlMat.translate ~x:(-1.0) ~y:(-1.0) ~z:0.0 ();
+			GlMat.scale ~x:(2.0) ~y:2.0 ~z:1.0 ();
+			self#draw_sprites;
+			GlMat.pop();
 			
+			(*finalize*)
 			Gl.flush();
 			Sdlgl.swap_buffers();
 
+
+
+	
+
+		method test_click (x,y) = 
+			let clickspr (s:sprite)  = s#click(float_of_int(x) /. _w,float_of_int(y)/. _h) in
+			List.iter clickspr _sprite_list;
+		
+	
+		method refresh =
+			Sdlevent.add (Sdlevent.VIDEOEXPOSE::[]);
+		method update =
+			if moving_up then begin c_cam#move(0.0,0.0,0.2); self#refresh; end else begin (); end;
+			if moving_dw then begin c_cam#move(0.0,0.0,-0.2); self#refresh; end else begin (); end;
+			if moving_lf then begin c_cam#move(0.2,0.0,0.0); self#refresh; end else begin (); end;
+			if moving_rg then begin c_cam#move(-0.2,0.0,0.0); self#refresh; end else begin (); end;
+		(*event manager : must be call in the main*)
 		method events = 
 			match Sdlevent.wait_event () with
 				|Sdlevent.KEYDOWN
 					{Sdlevent.keysym=Sdlkey.KEY_ESCAPE} -> exit 0;
 				|Sdlevent.KEYDOWN 
-					{Sdlevent.keysym=Sdlkey.KEY_UP} -> c_cam#move(0.0,0.0,0.2);
+					{Sdlevent.keysym=Sdlkey.KEY_UP} -> moving_up <- true;
+				|Sdlevent.KEYUP 
+					{Sdlevent.keysym=Sdlkey.KEY_UP} -> moving_up <- false;
 				|Sdlevent.KEYDOWN 
-					{Sdlevent.keysym=Sdlkey.KEY_DOWN} -> c_cam#move(0.0,0.0,-0.2);
+					{Sdlevent.keysym=Sdlkey.KEY_DOWN} -> moving_dw <- true;
+				|Sdlevent.KEYUP 
+					{Sdlevent.keysym=Sdlkey.KEY_DOWN} -> moving_dw <- false;
 				|Sdlevent.KEYDOWN 
-					{Sdlevent.keysym=Sdlkey.KEY_LEFT} -> c_cam#move(0.2,0.0,0.0);
+					{Sdlevent.keysym=Sdlkey.KEY_LEFT} -> moving_lf <- true;
+				|Sdlevent.KEYUP 
+					{Sdlevent.keysym=Sdlkey.KEY_LEFT} -> moving_lf <- false;
 				|Sdlevent.KEYDOWN 
-					{Sdlevent.keysym=Sdlkey.KEY_RIGHT} -> c_cam#move(-0.2,0.0,0.0);
+					{Sdlevent.keysym=Sdlkey.KEY_RIGHT} -> moving_rg <- true;
+				|Sdlevent.KEYUP 
+					{Sdlevent.keysym=Sdlkey.KEY_RIGHT} -> moving_rg <- false;
 				|Sdlevent.KEYDOWN 
 					{Sdlevent.keysym=Sdlkey.KEY_u} -> c_cam#move(0.0,2.0,0.0);
 				|Sdlevent.KEYDOWN 
 					{Sdlevent.keysym=Sdlkey.KEY_w} -> _wireframe <- (if _wireframe then false else true);
+				|Sdlevent.MOUSEBUTTONDOWN{Sdlevent.mbe_x=x; Sdlevent.mbe_y=y}-> self#test_click(x, y);
 				|Sdlevent.QUIT -> exit 0;
+				|Sdlevent.VIDEORESIZE (x,y) -> 
+					display <- Sdlvideo.set_video_mode 
+					~w:x 
+					~h:y 
+					~bpp:0
+					[`OPENGL ; `DOUBLEBUF; `RESIZABLE];
+					GlDraw.viewport 0 0 x y;
+					_w <- float_of_int(x); _h <- float_of_int(y);
 				|_ -> ();	
 end;;
 
