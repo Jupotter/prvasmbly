@@ -112,11 +112,10 @@ class color =
 		a <- a *. c#get_a;
 
 	method merge (c:color) = 
-		self#add c;
-		r <- r /. 2.0;
-		g <- g /. 2.0;
-		b <- b /. 2.0;
-		a <- a /. 2.0;
+		r <- (c#get_r +. r) /. 2.0;
+		g <- (c#get_g +. g) /. 2.0;
+		b <- (c#get_b +. b) /. 2.0;
+		a <- (c#get_a +. a) /. 2.0;
 
 	method equal (c:color) = 
 		(r = c#get_r && g = c#get_g && b = c#get_b && a = c#get_a);
