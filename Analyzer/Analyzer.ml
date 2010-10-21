@@ -80,23 +80,16 @@ let out = new BasicTypes.image (i#height/2) (i#width/2) in
 for x=0 to ((i#width-1)/2) do
 	for y=0 to ((i#height-1)/2) do
 	let col = new color in
-	let _ = col#set_rgb 0. 0. 0. in
-		if ((let n = i#get_pixel (2*x) (2*y) in n#get_rgb)=col#get_rgb)
-		 ||((let n = i#get_pixel (2*x+1) (2*y) in n#get_rgb)=col#get_rgb)
-		 ||((let n = i#get_pixel (2*x) (2*y+1) in n#get_rgb)=col#get_rgb)
-		 ||((let n = i#get_pixel (2*x+1) (2*y+1) in n#get_rgb)=col#get_rgb) then
+	let _ = col#set_rgb 1. 1. 1. in
+		if ((let n=i#get_pixel (2*x) (2*y) in n#get_rgb)=col#get_rgb)
+		 ||((let n=i#get_pixel (2*x+1) (2*y) in n#get_rgb)=col#get_rgb)
+		 ||((let n=i#get_pixel (2*x) (2*y+1) in n#get_rgb)=col#get_rgb)
+		 ||((let n=i#get_pixel (2*x+1) (2*y+1) in n#get_rgb)=col#get_rgb) then
 		 	out#set_pixel col x y
 		else
-		let (ca,cb,cc,cd)=(i#get_pixel (2*x) (2*y),
-				   i#get_pixel (2*x) (2*y+1),
-				   i#get_pixel (2*x+1) (2*y),
-				   i#get_pixel (2*x+1) (2*y+1))
-		in
 		begin
-			ca#merge cb;
-			ca#merge cc;
-			ca#merge cd;
-			out#set_pixel ca x y
+			col#set_rgb 0. 0. 0.;
+			out#set_pixel col x y
 		end
 	done
 done;

@@ -71,7 +71,7 @@ let save_image_bmp (i:image) (s:string) =
 	end in
         let _ = for k = h-1 downto 0 do
                 for j = 0 to w-1 do
-			f#write_color_rgb (i#get_pixel j k);
+			f#write_color_bgr (i#get_pixel j k);
 			f#write_byte 0
                 done
 	done
