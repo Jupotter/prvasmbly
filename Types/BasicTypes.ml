@@ -126,6 +126,8 @@ class color =
 		int_of_float(g) * 255 +
 		int_of_float(b) * 255 * 255 +
 		int_of_float(a) * 255 * 255 * 255);
+	method is_white =
+		(r > 0.8 && g > 0.8 && b > 0.8);
 end;;
 
 
@@ -144,7 +146,6 @@ class file_in (f:string) =
 	method read_n_char = function
 		|0 -> []
 		|n -> self#read_char::(self#read_n_char (n-1));
-
 	method read_int = 
 		let a0 = self#read_byte in
 		let a1 = self#read_byte in

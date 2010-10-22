@@ -4,47 +4,40 @@ let sdl_init () =
     Sdlevent.enable_events Sdlevent.all_events_mask;
   end
 
-let main() =
+let main() = 
 	sdl_init();
-(*
+	
 	let win = new Engine.window in
-	let msh = Engine.create_grild 502 502 20 in
-	let flcl = new BasicTypes.image 1 1 in
-	flcl#load_file "hm.jpg";
+	Interface.initialize win;
+	let msh = Engine.create_grild 240 240 10 in
+	
 
 	let hmap = new BasicTypes.image 1 1 in
-	hmap#load_file "carte.bmp";
+	hmap#load_file "hm.jpg";
 
 	let img = new BasicTypes.image 1 1 in
-	img#load_file "carte.bmp";
+	img#load_file "hm.jpg";
 
+	let flcl = new BasicTypes.image 1 1 in
+	flcl#load_file "Resources/icogrl.png";
 
+	let sprt = new Engine.sprite (flcl) in
 
-	let sprt = new Engine.sprite (hmap#clone) in
 	msh#apply_color (img);
 	msh#apply_height (hmap);
+
 	msh#save "hello.obj";
 	win#add_mesh msh;
 	win#add_sprite sprt;
-	sprt#set_on_click (fun _-> sprt#move(0.1,0.1););
+
+	sprt#set_size (0.08,0.1);
+	sprt#set_position(1.0 -. 0.08,0.0);
 	while true do
 		win#events;
 		win#draw;
 		win#update;
 	done
-*)
-	let map = new BasicTypes.image 1 1 in
-	map#load_file "carte.bmp";
-	let outmap = map in
-		let _ = Analyzer.double_diff outmap in
-		Bitmap.save_image_bmp outmap "outmap.bmp";
-	let outmap = map in
-		let _ = Analyzer.outlines map outmap in
-		begin
-		Bitmap.save_image_bmp outmap "outmapB.bmp";
-		let div2 = Analyzer.div_two outmap in
-			Bitmap.save_image_bmp div2 "div2.bmp"
-		end
+
 
 let _ = main();
 
