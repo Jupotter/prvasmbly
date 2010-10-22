@@ -57,6 +57,8 @@ class vertex =
 			y <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) )#get_g;
 		method apply_color (img:image) =
 			c <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) );
+		method test_subdivision (scale:int) (img:image) =
+			(img#get_pixel (int_of_float(x) / scale) (int_of_float(z) / scale))#is_white;
 		method move (mx,my,mz) = 
 			x<-x+.mx;
 			y<-y+.my;
@@ -105,6 +107,8 @@ class polygon = object(self)
 		v1#apply_color img;
 		v2#apply_color img;
 		v3#apply_color img;
+
+
 	method set_vertex_1 value = v1 <- value; 
 	method set_vertex_2 value = v2 <- value; 
 	method set_vertex_3 value = v3 <- value; 
@@ -190,6 +194,20 @@ class polygon = object(self)
 		let p4 = new polygon in
 		p4#set_vertices (sv1,sv2,sv3);
 		p1::p2::p3::p4::[];
+
+	method apply_subdivision (scale:int) (img:image) =
+			if ((v1#test_subdivision scale img) ||
+			(v2#test_subdivision scale img) ||
+			(v3#test_subdivision scale img)) then
+			begin
+				self#subdivide;
+			end
+			else
+			begin
+				let p = new polygon in
+				p#set_vertices(v1,v2,v3);
+				p::[];
+			end
 		
 end;;
 
@@ -199,7 +217,8 @@ class box = object(self)
 	val mutable sy = 0.0;
 	val mutable ex = 0.5;
 	val mutable ey = 0.5;
-
+	val mutable start_color = new BasicTypes.color;
+	val mutable end_color = new BasicTypes.color;
 	method get_position = (sx,sy);
 	method get_size = (ex, ey);
 	method set_position (x,y) =
@@ -211,22 +230,33 @@ class box = object(self)
 	method move (x,y) =
 		sx <- sx +. x;
 		sy <- sy +. y;
+	method set_start_color c = start_color <- c;
+	method set_start_color_rgb (r,g,b) = start_color#set_rgb_pck (r,g,b);
+	method set_end_color c = end_color <- c;
+	method set_end_color_rgb (r,g,b) = end_color#set_rgb_pck (r,g,b);
 	method draw = 
 			GlMat.push();
-			GlMat.load_identity();
+			GlMat.translate ~x:sy ~y:sx ~z:0.0 ();
 			GlMat.scale ~x:ex ~y:ey ~z:1.0 ();
-			GlMat.translate ~x:sx ~y:sy ~z:0.0 ();
 			GlDraw.begins `triangles;
+				GlDraw.color ~alpha:start_color#get_a start_color#get_rgb;
 				GlDraw.vertex3 (0.0, 0.0, 0.0);
 				GlDraw.vertex3 (1.0, 0.0, 0.0);
+				GlDraw.color ~alpha:end_color#get_a end_color#get_rgb;
+				GlDraw.vertex3 (1.0, 1.0, 0.0);
+
 				GlDraw.vertex3 (1.0, 1.0, 0.0);
 				GlDraw.vertex3 (0.0, 1.0, 0.0);
+				GlDraw.color ~alpha:start_color#get_a start_color#get_rgb;
+				GlDraw.vertex3 (0.0, 0.0, 0.0);
+
 			GlDraw.ends();
 			GlMat.pop();
 end;;
 (* create a mesh *)
 class mesh = object(self)
 	val mutable plg_list = ([]:polygon list)
+	val mutable working_list = ([]:polygon list)
 	val mutable _locked = false
 	val mutable x = 0.0
 	val mutable y = 0.0
@@ -240,22 +270,30 @@ class mesh = object(self)
 	
 	(*create a grild with the specified size*)
 	(* step represent the resolution  and must be lower than scale *)
-	method add_grild position_x position_z step_x step_z scale_x scale_z =
-		let sxf = float_of_int(step_x) in
-		let szf = float_of_int(step_z) in
-		for x = 0 to (scale_x / step_x) do
-			for y = 0 to (scale_z / step_z) do
+	method add_grild position_x position_z step scale_x scale_z =
+		let sxf = float_of_int(step) in
+		for x = 0 to (scale_x / step) do
+			for y = 0 to (scale_z / step) do
 				let plg1 = new polygon in
 				plg1#uniform sxf;
-				plg1#move(float_of_int(x * step_x + position_x), 0.0, float_of_int(y * step_z + position_z));
+				plg1#move(float_of_int(x * step + position_x), 0.0, float_of_int(y * step + position_z));
 				let plg2 = new polygon in
-				plg2#reverse_uniform szf;
-				plg2#move(float_of_int(x * step_x + position_x), 0.0, float_of_int(y * step_z + position_z));
+				plg2#reverse_uniform sxf;
+				plg2#move(float_of_int(x * step + position_x), 0.0, float_of_int(y * step + position_z));
 				plg_list<-(plg1#subdivide)@plg_list;
 				plg_list<-(plg2#subdivide)@plg_list;
 			done;
 		done;
-		
+	method add_square position_x position_z size =
+		let sxf = float_of_int(size) in
+		let plg1 = new polygon in
+				plg1#uniform sxf;
+				plg1#move(float_of_int(position_x), 0.0, float_of_int(position_z));
+				let plg2 = new polygon in
+				plg2#reverse_uniform sxf;
+				plg2#move(float_of_int(position_x), 0.0, float_of_int(position_z));
+
+
 	method get_position = (x,y,z);
 	method get_scale = (sx,sy,sz);
 	method set_position (vx,vy,vz) = 
@@ -314,7 +352,14 @@ class mesh = object(self)
 		self#iter app_plg; 
 	method apply_color (img:image) =
 		let app_plg (p:polygon) = p#apply_color img in
-		self#iter app_plg;		
+		self#iter app_plg;	
+	method apply_subdivision (scale:int) (img:image) =
+		
+		working_list <- [];
+		let app_plg (p:polygon) = working_list <- (p#apply_subdivision scale img)@working_list; in
+		self#iter app_plg;
+		plg_list <- working_list;
+
 	(*optimize and create a GL list with the mesh*)	
 	(*NOT YET TESTED ! DO NOT USE*)	
 	method lock = 
@@ -330,7 +375,7 @@ end;;
 
 let create_grild size_x size_y step = 
 	let m = new mesh in
-	m#add_grild 0 0 step step size_x size_y;
+	m#add_grild 0 0 step size_x size_y;
 	m
 
 (* create a texture *)
@@ -361,11 +406,11 @@ class texture (i:BasicTypes.image) =
 		method draw =
 			GlTex.bind_texture `texture_2d id;
 			Gl.enable `texture_2d;
-			GlTex.env (`mode`decal);
+			GlTex.env (`mode`replace);
 
 		(* must be call after EACH draw !!*)
 		method end_draw =
-			GlTex.env (`mode`decal);
+			GlTex.env (`mode`replace);
 			Gl.disable `texture_2d;
 		
 
@@ -402,8 +447,9 @@ class sprite (i:BasicTypes.image)= object(self)
 			if visible then
 			begin
 			GlMat.push();
-			GlMat.scale ~x:ex ~y:ey ~z:1.0 ();
-			GlMat.translate ~x:sx ~y:sy ~z:0.0 ();
+			GlMat.translate ~x:sy ~y:sx ~z:0.0 ();
+			GlMat.scale ~x:ey ~y:ex ~z:1.0 ();
+
 			texture#draw;
 			GlDraw.begins `triangles;
 				GlTex.coord2 (0.0, 0.0);
@@ -434,6 +480,7 @@ class window =
 	object(self)
 		val mutable _mesh_list = ([]:mesh list)
 		val mutable _sprite_list = ([]:sprite list)
+		val mutable _box_list = ([]:box list)
 		val mutable _mx = 0
 		val mutable _my = 0
 		val mutable _w = 640.0
@@ -465,10 +512,15 @@ class window =
 		method draw_sprites = 
 			let drawspr (s:sprite) = s#draw in
 			List.iter drawspr _sprite_list;
+		method draw_boxes = 
+			let drawbox (b:box) = b#draw in
+			List.iter drawbox _box_list;
 		method add_mesh m = 
 			_mesh_list <- m::_mesh_list;
 		method add_sprite s = 
 			_sprite_list <- s::_sprite_list;
+		method add_box b = 
+			_box_list <- b::_box_list;
 		(*drawing method*)
 		method draw =
 			
@@ -483,12 +535,15 @@ class window =
 			
 			c_cam#draw;
 			Gl.enable `depth_test;
-			GlDraw.color (0.3,0.7,0.4);
+			GlDraw.color (0.0,0.0,1.0);
 			self#draw_meshes;
 
 			(*start to draw in 2D*)
 			GlDraw.polygon_mode `both `fill;
 			GlMat.mode `projection;
+			Gl.enable `blend;
+			GlDraw.color ~alpha:0.0 (0.0,0.0,1.0);
+			GlFunc.blend_func `src_alpha `one_minus_src_alpha;
 			GlMat.load_identity();
 			GlMat.mode `modelview;
 			GlMat.load_identity();
@@ -497,8 +552,9 @@ class window =
 			GlMat.translate ~x:(-1.0) ~y:(-1.0) ~z:0.0 ();
 			GlMat.scale ~x:(2.0) ~y:2.0 ~z:1.0 ();
 			self#draw_sprites;
+			self#draw_boxes;
 			GlMat.pop();
-			
+			Gl.disable `blend;
 			(*finalize*)
 			Gl.flush();
 			Sdlgl.swap_buffers();
