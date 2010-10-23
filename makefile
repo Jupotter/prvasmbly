@@ -5,38 +5,38 @@ PCKMANAGER= yum
 build:  start build.BasicTypes.cmx build.Loaders.cmx build.Analyzer.cmx build.3DEngine.cmx build.Interf.cmx
 	@echo -n "generation de l'executable ...  :  "
 	@ocamlopt -o project.elf ${GRAPHICSLIB}  ${TYPESLIB}  ${PROJECTLIB} str.cmxa unix.cmxa  main.ml
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 build.bytecode: 
 	@ocamlc -o project.bytecode -I +lablGL lablgl.cma lablglut.cma  str.cma unix.cma  main.ml
 build.BasicTypes.cmx:
-	@echo -n "generation des types basique ...  :  "
+	@echo -n "generation des types basiques ...  :  "
 	@(cd Types/ && ocamlopt ${GRAPHICSLIB} -c BasicTypes.cmx *.ml)
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 
 build.3DEngine.cmx:
 	
 	@echo -n "generation du moteur 3D ...  :  "
 	@(cd 3DEngine/ && ocamlopt ${GRAPHICSLIB} -I ../Types/ -c  ../Types/BasicTypes.cmx *.ml)
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 
 build.Interf.cmx:
 	@echo -n "generation de l'interface ...  :  "
-	@(cd Interface/ && ocamlopt  -I ../Types/ -c Interface.cmx ../Types/BasicTypes.cmx *.ml)
-	@echo "[REUSSIT]"
+	@(cd Interface/ && ocamlopt ${GRAPHICSLIB}  -I ../Types/ ../Types/BasicTypes.cmx -I ../3DEngine/ ../3DEngine/Engine.cmx -c Interface.cmx  *.ml)
+	@echo "[REUSSIE]"
 
 build.Analyzer.cmx:
 	@echo -n "generation de l'analyseur d'image ...  :  "
 	@(cd Analyzer/ && ocamlopt  -I ../Types/ -c Analyzer.cmx  ../Types/BasicTypes.cmx *.ml)
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 
 build.Loaders.cmx:
 	@echo "generation des Loaders  :  "
 	@echo -n "	generation du Loader de fichier .obj ... :  "
 	@(cd Loaders/Wavefront && ocamlopt  -I ../../Types/ -c  Wavefront.cmx  ../../Types/BasicTypes.cmx *.ml)
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 	@echo -n "	generation du Loader de fichier .bmp ... :  "
 	@(cd Loaders/Bitmap && ocamlopt  -I ../../Types/ -c Bitmap.cmx  ../../Types/BasicTypes.cmx *.ml )
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 
 clean:
 	@echo -n "netoyage des repertoires ...  :  "	
@@ -48,7 +48,7 @@ clean:
 	@rm -f Loaders/Bitmap/*.{cmx,cmi,o,cmxa,a}
 	@rm -f Loaders/Wavefront/*.{cmx,cmi,o,cmxa,a}
 	@rm -f Types/*.{cmx,cmi,o,cmxa,a}
-	@echo "[REUSSIT]"
+	@echo "[REUSSIE]"
 clean.OpenGL:
 	@rm -f 3DEngine/OpenGL/*.{cmxa,a,o,out}
 start:
@@ -66,11 +66,11 @@ OpenGL:
 	@rm -f 3DEngine/OpenGL/*.{out}
 	@echo "[REUSSIT]"
 test.bytecode: build.bytecode clean
-	@echo "test du résultat ..."
+	@echo "test du resultat ..."
 	@(ocamlrun project.bytecode)
 	@echo " "
 test: build clean
-	@echo "test du résultat ..."
+	@echo "test du resultat ..."
 	@(./project.elf)
 	@echo " "
 
