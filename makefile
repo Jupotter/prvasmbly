@@ -21,7 +21,7 @@ build.3DEngine.cmx:
 
 build.Interf.cmx:
 	@echo -n "generation de l'interface ...  :  "
-	@(cd Interface/ && ocamlopt ${GRAPHICSLIB}  -I ../Types/ ../Types/BasicTypes.cmx -I ../3DEngine/ ../3DEngine/Engine.cmx -c Interface.cmx  *.ml)
+	@(cd Interface/ && ocamlopt ${GRAPHICSLIB}  -I ../Types/ ../Types/BasicTypes.cmx -I ../3DEngine/ ../3DEngine/Engine.cmx -I ../Analyzer/ ../Analyzer/Analyzer.cmx -c Interface.cmx  *.ml)
 	@echo "[REUSSIE]"
 
 build.Analyzer.cmx:
