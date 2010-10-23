@@ -140,13 +140,51 @@ out
 
 (* Create a normal map from a heightmap *)
 
+let get_height col =
+	let (r,g,b) = col#get_rgb in
+	(0.3*.r)+.(0.59*.g)+.(0.11*.b)
+
 let normalmap i =
 let out = i in
-for x=1 to i#width-1 do
-	for y=1 to i#height do
-	()
+	for x=0 to i#width-2 do
+	for y=0 to i#height-2 do
+		let (p,px,py)=(i#get_pixel x y,
+			       i#get_pixel (x+1) y,
+			       i#get_pixel x (y+1)) in
+		let (h,hx,hy)=(get_height p, get_height px, get_height py) in
+			let v = new BasicTypes.vector3 in
+				v#set_xyz ((hx-.h),1.,(hy-.h));
+				v#make_uniform;
+				let col = new BasicTypes.color in
+				col#set_rgb_pck (v#get_xyz);
+				out#set_pixel col x y
 	done
-done
+	done;
+	let x = i#width-1 in
+	for y=0 to i#height-2 do
+		let (p,px)=(i#get_pixel x y,
+			    i#get_pixel (x+1) y) in
+		let (h,hx)=(get_height p, get_height px) in
+			let v = new BasicTypes.vector3 in
+				v#set_xyz ((hx-.h),1.,0.);
+				v#make_uniform;
+				let col = new BasicTypes.color in
+				col#set_rgb_pck (v#get_xyz);
+				out#set_pixel col x y
+	done;
+	for x=0 to  i#width-2 do
+	let y = i#height-1 in
+		let (p,py)=(i#get_pixel x y,
+			    i#get_pixel x (y+1)) in
+		let (h,hy)=(get_height p, get_height py) in
+			let v = new BasicTypes.vector3 in
+				v#set_xyz (0.,1.,(hy-.h));
+				v#make_uniform;
+				let col = new BasicTypes.color in
+				col#set_rgb_pck (v#get_xyz);
+				out#set_pixel col x y
+	done;
+out
 
 (* Return the height map in Black and white*)
 
