@@ -10,7 +10,7 @@ let get_image_colors (i:image) = ();;
 
 (* Double Differential *)
 
-let double_diff (i:image) =
+let double_diff (i:BasicTypes.image) =
 let out = i in
 for x=0 to (i#width-1) do
 	for y=0 to (i#height)-1 do
@@ -18,13 +18,13 @@ for x=0 to (i#width-1) do
 		let pix = i#get_pixel x y in
 		if ((x < (i#width-1))
 		   && ((pix#get_rgb) <> (let n=i#get_pixel (x+1) y in n#get_rgb))) then
-			let col = new color in
+			let col = new BasicTypes.color in
 				col#set_rgb 0. 0. 0.;
 				col
 		else
 		if ((y < (i#height-1))
 		   && ((pix#get_rgb) <> (let n=i#get_pixel x (y+1) in n#get_rgb))) then
-			let col = new color in
+			let col = new BasicTypes.color in
 				col#set_rgb 0. 0. 0.;
 				col
 		else
@@ -32,8 +32,7 @@ for x=0 to (i#width-1) do
 	in
 		(out#set_pixel col x y)
 	done
-done;
-out
+done
 
 (* Outlines on a black image *)
 
@@ -45,24 +44,23 @@ for x=0 to (i#width-1) do
 		let pix = i#get_pixel x y in
 		if ((x < (i#width-1))
 		   && ((pix#get_rgb) <> (let n=i#get_pixel (x+1) y in n#get_rgb))) then
-			let col = new color in
+			let col = new BasicTypes.color in
 				col#set_rgb 1. 1. 1.;
 				col
 		else
 		if ((y < (i#height-1))
 		   && ((pix#get_rgb) <> (let n=i#get_pixel x (y+1) in n#get_rgb))) then
-			let col = new color in
+			let col = new BasicTypes.color in
 				col#set_rgb 1. 1. 1.;
 				col
 		else
-		let col = new color in
+		let col = new BasicTypes.color in
 			col#set_rgb 0. 0. 0.;
 			col
 	in
 		(out#set_pixel col x y)
 	done
-done;
-out
+done
 
 (* Put a grid of n pixel on an image *)
 
@@ -70,49 +68,49 @@ let grid i n =
 let out = i in
 for x=0 to (i#width-1) do
 	for y=0 to (i#height-1) do
-	let col = new color in
+	let col = new BasicTypes.color in
 	let _ = col#set_rgb 0. 0. 0. in
 		if ((x mod n =0)||(y mod n = 0)) then
 			out#set_pixel col x y
 		else ()
 	done
-done;
-out
+done
 
-let grid_diag i n =
+
+let grid_diag (i:BasicTypes.image) n =
 let out = i in
 for x=0 to (i#width-1) do
 	for y=0 to (i#height-1) do
-	let col = new color in
+	let col = new BasicTypes.color in
 	let _ = col#set_rgb 0. 0. 0. in
 		if ((x mod n =0)||(y mod n = 0)||(x mod n + y mod n = n)) then
 			out#set_pixel col x y
 		else ()
 	done
-done;
-out
+done
 
 (* Divide an image by 2 on each axis, with priority to white pixel *)
 
-let div_two i =
-let out = new BasicTypes.image (i#height/2) (i#width/2) in
-for x=0 to ((i#width-1)/2) do
-	for y=0 to ((i#height-1)/2) do
-	let col = new color in
-	let _ = col#set_rgb 1. 1. 1. in
-		if ((let n=i#get_pixel (2*x) (2*y) in n#get_rgb)=col#get_rgb)
-		 ||((let n=i#get_pixel (2*x+1) (2*y) in n#get_rgb)=col#get_rgb)
-		 ||((let n=i#get_pixel (2*x) (2*y+1) in n#get_rgb)=col#get_rgb)
-		 ||((let n=i#get_pixel (2*x+1) (2*y+1) in n#get_rgb)=col#get_rgb) then
-		 	out#set_pixel col x y
+let div_two (i:BasicTypes.image) =
+let out = new BasicTypes.image (i#width / 2) (i#height / 2) in
+for x=0 to ((out#width ) - 1) do
+	for y=0 to ((out#height) - 1) do
+	let col = new BasicTypes.color in
+		if ((i#get_pixel (2*x) (2*y))#is_white)
+		 ||((i#get_pixel (2*x+1) (2*y))#is_white)
+		 ||((i#get_pixel (2*x) (2*y+1))#is_white)
+		 ||((i#get_pixel (2*x+1) (2*y+1))#is_white) then
+		begin
+			col#set_rgb 1.0 1.0 1.0;
+			out#set_pixel col x y;
+		end
 		else
 		begin
-			col#set_rgb 0. 0. 0.;
-			out#set_pixel col x y
+			out#set_pixel col x y;
 		end
 	done
 done;
-out
+(out;)
 
 (* Double the thickness of the outline *)
 
