@@ -11,6 +11,7 @@ let get_image_colors (i:image) = ();;
 (* Double Differential *)
 
 let double_diff (i:image) =
+let out = i in
 for x=0 to (i#width-1) do
 	for y=0 to (i#height)-1 do
 	let col =
@@ -29,13 +30,15 @@ for x=0 to (i#width-1) do
 		else
 			pix
 	in
-		(i#set_pixel col x y)
+		(out#set_pixel col x y)
 	done
-done
+done;
+out
 
 (* Outlines on a black image *)
 
-let outlines i out =
+let outlines i =
+let out = i in
 for x=0 to (i#width-1) do
 	for y=0 to (i#height-1) do
 	let col =
@@ -58,20 +61,36 @@ for x=0 to (i#width-1) do
 	in
 		(out#set_pixel col x y)
 	done
-done
+done;
+out
 
 (* Put a grid of n pixel on an image *)
 
 let grid i n =
+let out = i in
+for x=0 to (i#width-1) do
+	for y=0 to (i#height-1) do
+	let col = new color in
+	let _ = col#set_rgb 0. 0. 0. in
+		if ((x mod n =0)||(y mod n = 0)) then
+			out#set_pixel col x y
+		else ()
+	done
+done;
+out
+
+let grid_diag i n =
+let out = i in
 for x=0 to (i#width-1) do
 	for y=0 to (i#height-1) do
 	let col = new color in
 	let _ = col#set_rgb 0. 0. 0. in
 		if ((x mod n =0)||(y mod n = 0)||(x mod n + y mod n = n)) then
-			i#set_pixel col x y
+			out#set_pixel col x y
 		else ()
 	done
-done
+done;
+out
 
 (* Divide an image by 2 on each axis, with priority to white pixel *)
 
@@ -95,6 +114,39 @@ for x=0 to ((i#width-1)/2) do
 done;
 out
 
+(* Double the thickness of the outline *)
+
+let double_outline i =
+let out = i in
+for x=1 to i#width-2 do
+	for y=1 to i#height-2 do
+		if (let n=i#get_pixel (x-1) (y-1) in n#is_white)
+		 ||(let n=i#get_pixel (x) (y-1) in n#is_white)
+		 ||(let n=i#get_pixel (x+1) (y-1) in n#is_white)
+		 ||(let n=i#get_pixel (x+1) (y) in n#is_white)
+		 ||(let n=i#get_pixel (x+1) (y+1) in n#is_white)
+		 ||(let n=i#get_pixel (x) (y+1) in n#is_white)
+		 ||(let n=i#get_pixel (x-1) (y+1) in n#is_white)
+		 ||(let n=i#get_pixel (x-1) (y) in n#is_white)
+		then
+ 			let col =new BasicTypes.color in
+			let _ = col#set_rgb 1. 1. 1. in
+				out#set_pixel col x y
+		else
+			out#_set_pixel (i#get_pixel x y) x y
+	done
+done;
+out
+
+(* Create a normal map from a heightmap *)
+
+let normalmap i =
+let out = i in
+for x=1 to i#width-1 do
+	for y=1 to i#height do
+	()
+	done
+done
 
 (* Return the height map in Black and white*)
 
