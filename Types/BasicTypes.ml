@@ -302,13 +302,13 @@ class image (image_width:int) (image_height:int) =
 		done;
 		;
 
-method merge_and (i:image) =
+	method merge_and (i:image) =
 		let minh = min i#height h in
 		let minw = min i#width w in
 		for x = 0 to minh-1 do
 			for y = 0 to minw-1 do
-				if not(let n=self#get_pixel x y in n#is_white)
-				|| not(let n=i#get_pixel x y in n#is_white) then
+				if not((let n=self#get_pixel x y in n#is_white)
+				&& (let n=i#get_pixel x y in n#is_white)) then
 					let col = new color in
 					col#set_rgb 0. 0. 0.;
 					self#set_pixel col x y
