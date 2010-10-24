@@ -6,7 +6,7 @@ build:  start build.BasicTypes.cmx build.Loaders.cmx build.Analyzer.cmx build.3D
 	@echo -n "generation de l'executable ...  :  "
 	@ocamlopt -o project.elf ${GRAPHICSLIB}  ${TYPESLIB}  ${PROJECTLIB} str.cmxa unix.cmxa  main.ml
 	@echo "[REUSSIE]"
-build.bytecode: 
+build.bytecode:
 	@ocamlc -o project.bytecode -I +lablGL lablgl.cma lablglut.cma  str.cma unix.cma  main.ml
 build.BasicTypes.cmx:
 	@echo -n "generation des types basiques ...  :  "
@@ -14,7 +14,7 @@ build.BasicTypes.cmx:
 	@echo "[REUSSIE]"
 
 build.3DEngine.cmx:
-	
+
 	@echo -n "generation du moteur 3D ...  :  "
 	@(cd 3DEngine/ && ocamlopt ${GRAPHICSLIB} -I ../Types/ -c  ../Types/BasicTypes.cmx *.ml)
 	@echo "[REUSSIE]"
@@ -39,7 +39,7 @@ build.Loaders.cmx:
 	@echo "[REUSSIE]"
 
 clean:
-	@echo -n "netoyage des repertoires ...  :  "	
+	@echo -n "netoyage des repertoires ...  :  "
 	@rm -f *.{cmx,cmi,o,cmxa,a}
 	@rm -f Interface/*.{cmx,cmi,o,cmxa,a}
 	@rm -f 3DEngine/*.{cmx,cmi,o,cmxa,a}
@@ -58,7 +58,7 @@ start:
 OpenGL:
 	@echo -n "generation des modules OpenGL ...  :  "
 	@(cd 3DEngine/OpenGL && ocamlopt -c win_stub.c)
-	@(cd 3DEngine/OpenGL && ocamlopt -c -cc gcc -cclib GL unix.cmxa bigarray.cmxa graphics.cmxa  win_stub.o Win.ml)	
+	@(cd 3DEngine/OpenGL && ocamlopt -c -cc gcc -cclib GL unix.cmxa bigarray.cmxa graphics.cmxa  win_stub.o Win.ml)
 	@(cd 3DEngine/OpenGL && ocamlopt  -c glcaml_stub.c)
 	@(cd 3DEngine/OpenGL && ocamlopt -c -cclib GL unix.cmxa bigarray.cmxa graphics.cmxa  glcaml_stub.o Glcaml.ml)
 

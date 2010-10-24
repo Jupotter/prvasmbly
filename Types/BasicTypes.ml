@@ -199,6 +199,8 @@ class file_in (f:string) =
 
 	method read_char = char_of_int(input_byte filestream);
 
+	method read_line = input_line filestream;
+
 	method read_n_char = function
 		|0 -> []
 		|n -> self#read_char::(self#read_n_char (n-1));
