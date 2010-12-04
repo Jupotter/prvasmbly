@@ -1,5 +1,7 @@
 *.o
 *.cmi
+*.cmo
 *.cmx
 *.elf
 *.swp
+~*
