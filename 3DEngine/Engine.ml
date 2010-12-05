@@ -1,4 +1,3 @@
-open BasicTypes
 class camera = object(self)
 		val mutable _x = 0.0
 		val mutable _y = 9.0
@@ -53,11 +52,15 @@ class vertex =
 		method get_y = y;
 		method get_z = z;
 		method get_xyz = (x,y,z);
-		method apply_height (img:image) =
+		method test_mirror (scale:int) (img:BasicTypes.image) = 
+			(img#get_pixel (int_of_float(x) / scale) (int_of_float(z) / scale))#is_white;
+		method apply_height (img:BasicTypes.image) =
 			y <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) )#get_sum_rg;
-		method apply_color (img:image) =
+		method apply_color (img:BasicTypes.image) =
 			c <- (img#get_pixel (int_of_float x) (int_of_float (y +. z)) );
-		method test_subdivision (scale:int) (img:image) =
+		method apply_lightmap (img:BasicTypes.image) =
+			c#mul (img#get_pixel (int_of_float x) (int_of_float (y +. z)) );
+		method test_subdivision (scale:int) (img:BasicTypes.image) =
 			(img#get_pixel (int_of_float(x) / scale) (int_of_float(z) / scale))#is_white;
 		method move (mx,my,mz) = 
 			x<-x+.mx;
@@ -99,16 +102,31 @@ class polygon = object(self)
 	val mutable v1 = new vertex;
 	val mutable v2 = new vertex;
 	val mutable v3 = new vertex;
-	method apply_height (img:image) =
+	method apply_height (img:BasicTypes.image) =
 		v1#apply_height img;
 		v2#apply_height img;
 		v3#apply_height img;
-	method apply_color (img:image) =
+	method apply_color (img:BasicTypes.image) =
 		v1#apply_color img;
 		v2#apply_color img;
 		v3#apply_color img;
-
-
+	method apply_lightmap (img:BasicTypes.image) =
+		v1#apply_lightmap img;
+		v2#apply_lightmap img;
+		v3#apply_lightmap img;
+	method apply_mirror (scale:int) (img:BasicTypes.image) =
+			if(v2#test_mirror scale img) ||
+			(v3#test_mirror scale img) then
+			begin
+				v1 <- new vertex;
+				v2 <- new vertex;
+				v3 <- new vertex;
+			end
+			else
+			begin
+				();
+			end
+		
 	method set_vertex_1 value = v1 <- value; 
 	method set_vertex_2 value = v2 <- value; 
 	method set_vertex_3 value = v3 <- value; 
@@ -143,8 +161,8 @@ class polygon = object(self)
 	(*create a uniform polygon with the specified size*)
 	(*and reverse the vertex 0*)
 	method reverse_uniform size = 
-		v2#move(size,0.0,0.0);
-		v3#move(0.0,0.0,size);
+		v2#move(0.0,0.0,size);
+		v3#move(size,0.0,0.0);
 		v1#move(size,0.0,size);
 	method move (mx,my,mz) = 
 		v1#move(mx,my,mz);
@@ -195,7 +213,7 @@ class polygon = object(self)
 		p4#set_vertices (sv1,sv2,sv3);
 		p1::p2::p3::p4::[];
 
-	method apply_subdivision (scale:int) (img:image) =
+	method apply_subdivision (scale:int) (img:BasicTypes.image) =
 			if ((v1#test_subdivision scale img) ||
 			(v2#test_subdivision scale img) ||
 			(v3#test_subdivision scale img)) then
@@ -341,6 +359,8 @@ class mesh = object(self)
 		let off_set = ref 1 in
 		self#iter (fun (p:polygon) -> (p#save_vertices ot));
 		self#iter (fun (p:polygon) -> p#save_face off_set ot);
+		ot#close;
+		();
 	method draw = 
 		
 
@@ -367,19 +387,24 @@ class mesh = object(self)
 			GlMat.pop();
 			end
 			
-	method apply_height (img:image) =
+	method apply_height (img:BasicTypes.image) =
 		let app_plg (p:polygon) = p#apply_height img in
 		self#iter app_plg; 
-	method apply_color (img:image) =
+	method apply_lightmap (img:BasicTypes.image) =
+		let app_plg (p:polygon) = p#apply_lightmap img in
+		self#iter app_plg; 
+	method apply_color (img:BasicTypes.image) =
 		let app_plg (p:polygon) = p#apply_color img in
 		self#iter app_plg;	
-	method apply_subdivision (scale:int) (img:image) =
+	method apply_subdivision (scale:int) (img:BasicTypes.image) =
 		
 		working_list <- [];
 		let app_plg (p:polygon) = working_list <- (p#apply_subdivision scale img)@working_list; in
 		self#iter app_plg;
 		plg_list <- working_list;
-
+	method apply_mirror (scale:int) (img:BasicTypes.image) =
+		let app_plg (p:polygon) = p#apply_mirror scale img in
+		self#iter app_plg;			
 	(*optimize and create a GL list with the mesh*)	
 	(*NOT YET TESTED ! DO NOT USE*)	
 	method lock = 
@@ -513,7 +538,7 @@ class window =
 		val mutable _my = 0
 		val mutable _w = 640.0
 		val mutable _h = 480.0
-		val mutable _bgcolor = new color;
+		val mutable _bgcolor = new BasicTypes.color;
 		val mutable _wireframe = false;
 		val mutable moving_up = false;
 		val mutable moving_dw = false;
@@ -629,8 +654,10 @@ class window =
 				|Sdlevent.KEYDOWN 
 					{Sdlevent.keysym=Sdlkey.KEY_u} -> c_cam#move(0.0,2.0,0.0);
 				|Sdlevent.KEYDOWN 
-					{Sdlevent.keysym=Sdlkey.KEY_w} -> self#toggle_wireframe ;
-				|Sdlevent.MOUSEBUTTONDOWN{Sdlevent.mbe_x=x; Sdlevent.mbe_y=y}-> self#test_click(x, y);
+					{Sdlevent.keysym=Sdlkey.KEY_d} -> c_cam#move(0.0,-2.0,0.0);
+				|Sdlevent.KEYDOWN 
+					{Sdlevent.keysym=Sdlkey.KEY_w} -> self#toggle_wireframe ; self#refresh;
+				|Sdlevent.MOUSEBUTTONDOWN{Sdlevent.mbe_x=x; Sdlevent.mbe_y=y}-> self#test_click(x, y); self#refresh;
 				|Sdlevent.QUIT -> exit 0;
 				|Sdlevent.VIDEORESIZE (x,y) -> 
 					display <- Sdlvideo.set_video_mode 

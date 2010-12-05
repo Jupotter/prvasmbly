@@ -1,4 +1,3 @@
-open BasicTypes
 
 (* This is launch at the beginning *)
 
@@ -6,7 +5,7 @@ let initialize () = ();;
 
 (* Return all the colors contained in the image *)
 
-let get_image_colors (i:image) = ();;
+let get_image_colors (i:BasicTypes.image) = ();;
 
 (* Double Differential *)
 
@@ -90,7 +89,7 @@ for x=0 to (i#width-1) do
 done
 
 (* Divide an image by 2 on each axis, with priority to white pixel *)
-
+(*errreur il faut traiter x = out#width - 1 et y = out#height à part*)
 let div_two (i:BasicTypes.image) =
 let out = new BasicTypes.image (i#width / 2) (i#height / 2) in
 for x=0 to ((out#width ) - 1) do
@@ -186,19 +185,57 @@ out
 
 (* Return the height map in Black and white*)
 
-let apply_height (h:float) (c:color list) (f:float list) (i:image) =
-	let rec set_height (cl:color list) (hl:float list) (color_in:color) =
+let apply_height (h:float) (c:BasicTypes.color list) (f:float list) (i:BasicTypes.image) =
+	let rec set_height (cl:BasicTypes.color list) (hl:float list) (color_in:BasicTypes.color) =
 	 	match (cl,hl) with
-			|([],[]) -> new color
-			|([], _) -> new color
-			|(_, []) -> new color
+			|([],[]) -> new BasicTypes.color
+			|([], _) -> new BasicTypes.color
+			|(_, []) -> new BasicTypes.color
 			|(col::cl, h::hl) ->
 				if color_in#equal col then
-					let result = new color in
+					let result = new BasicTypes.color in
 					result#set_rgb h h h;
 					result
 				else
 					set_height cl hl color_in
 	in
 	i#foreach_pixel (set_height c f);;
+
+(* Get Image Color *)
+
+let rec is_not_in_list cl (c: BasicTypes.color) =
+	let rec call = function
+	    | [] -> true
+	    | e::l when (c#equal e) -> false
+	    | e::l -> call l
+	in
+	call !cl;;
+ let get_image_colors (i:BasicTypes.image) =
+	let colorlist = ref ([]:BasicTypes.color list) in
+	let f1 = is_not_in_list colorlist in
+	let _ = 
+		i#foreach_tested_pixel f1
+		(fun (c:BasicTypes.color) -> colorlist := c::!colorlist ; c)
+	in !colorlist;;
+
+
+(* Tesselate an HeightMap *)
+let tesselate (hm:BasicTypes.image) (meshmap) = 
+	begin
+	outlines hm;
+	let div2 = div_two hm in 
+	let div4 = div_two div2 in 
+	let div8 = div_two div4 in 
+	let div16 = div_two div8 in
+	let div32 = div_two div16 in 
+	let div64 = div_two div32 in
+	let div128 = div_two div64 in
+	let div256 = div_two div128 in
+	meshmap#apply_subdivision 256 div256;
+	meshmap#apply_subdivision 128 div128;
+	meshmap#apply_subdivision 64 div64;
+	meshmap#apply_subdivision 32 div32;
+	meshmap#apply_subdivision 16 div16;
+	meshmap#apply_subdivision 8 div8;
+	end
 
