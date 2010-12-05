@@ -18,18 +18,19 @@ let load_bitmap (win:Engine.window) =
 		
 let main() = 
 	Gtkint.gtk_init();
-	sdl_init();
+	sdl_init()
 	
-	let win = new Engine.window in
+
+(*let sdl_window () = 
+	let win = new Engine.window in	
 	Interface.initialize win;
 	load_bitmap win;
-	
-	while true do
-		win#events;
-		win#draw;
-		win#update;
-	done
+		while true do
+			win#events;
+			win#draw;
+			win#update;
+		done
+	*)
 
 
 let _ = main();
-
