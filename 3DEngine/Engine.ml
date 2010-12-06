@@ -527,9 +527,7 @@ class sprite (i:BasicTypes.image)= object(self)
 end;;
 
 
-
-
-class window =
+class display = 
 	object(self)
 		val mutable _mesh_list = ([]:mesh list)
 		val mutable _sprite_list = ([]:sprite list)
@@ -544,20 +542,9 @@ class window =
 		val mutable moving_dw = false;
 		val mutable moving_lf = false;
 		val mutable moving_rg = false;
-		val mutable display = 
-			Sdlvideo.set_video_mode 
-				~w:640 
-				~h:480 
-				~bpp:0
-				[`OPENGL ; `DOUBLEBUF; `RESIZABLE];
 		val mutable c_cam = new camera;
-
 		(*get the current camera*)
 		method get_camera = c_cam;
-
-		method swap_buffers = Sdlgl.swap_buffers();
-		(*useless*)
-		method init = ();
 		method toggle_wireframe =  _wireframe <- (if _wireframe then false else true)
 		method set_background_color c = _bgcolor <- c;
 		method draw_meshes = 
@@ -575,6 +562,68 @@ class window =
 			_sprite_list <- s::_sprite_list;
 		method add_box b = 
 			_box_list <- b::_box_list;
+		(*drawing method*)
+		method draw =
+	
+  			GlClear.color 
+				(_bgcolor#get_r,
+				_bgcolor#get_g,
+				_bgcolor#get_b);
+
+			(*start to draw in 3D*)
+  			GlClear.clear [`color; `depth] ;
+			GlDraw.polygon_mode `both (if _wireframe  then `line else `fill);
+			
+			c_cam#draw;
+			Gl.enable `depth_test;
+			GlDraw.color (0.0,0.0,1.0);
+			self#draw_meshes;
+
+			(*start to draw in 2D*)
+		
+			GlDraw.polygon_mode `both `fill;
+			GlMat.mode `projection;
+			Gl.enable `blend;
+			GlDraw.color ~alpha:0.0 (0.0,0.0,1.0);
+			GlFunc.blend_func `src_alpha `one_minus_src_alpha;
+			GlMat.load_identity();
+			GlMat.mode `modelview;
+			GlMat.load_identity();
+			GlMat.push();
+			GlMat.scale ~x:(1.0) ~y:(-1.0) ~z:1.0 ();
+			GlMat.translate ~x:(-1.0) ~y:(-1.0) ~z:0.0 ();
+			GlMat.scale ~x:(2.0) ~y:2.0 ~z:1.0 ();
+			self#draw_sprites;
+			self#draw_boxes;
+			GlMat.pop();
+			Gl.disable `blend;
+			(*finalize*)
+			Gl.flush();
+
+
+	
+
+		method test_click (x,y) = 
+			let clickspr (s:sprite)  = s#click(float_of_int(x) /. _w,float_of_int(y)/. _h) in
+			List.iter clickspr _sprite_list;
+
+end;;
+		
+class window =
+	object(self)
+		inherit display
+		val mutable display = 
+			Sdlvideo.set_video_mode 
+				~w:640 
+				~h:480 
+				~bpp:0
+				[`OPENGL ; `DOUBLEBUF; `RESIZABLE];
+		(*get the current camera*)
+		method get_camera = c_cam;
+
+		method swap_buffers = Sdlgl.swap_buffers();
+		(*useless*)
+		method init = ();
 		(*drawing method*)
 		method draw =
 			
