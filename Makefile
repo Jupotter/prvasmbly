@@ -3,7 +3,7 @@ OCAML = ocamlopt
 
 GRAPHICSLIB = -ccopt -L. bigarray.cmxa -I +lablGL lablgl.cmxa lablglut.cmxa -I +sdl sdl.cmxa sdlloader.cmxa -I +lablgtk2 lablgtk.cmxa lablgtkgl.cmxa
 
-PROJECTLIB = -I 3DEngine/ 3DEngine/Engine.cmx -I Loaders/Bitmap/  Loaders/Bitmap/Bitmap.cmx -I Loaders/Wavefront Loaders/Wavefront/Wavefront.cmx -I Analyzer/ Analyzer/Analyzer.cmx -I Gtk/ Gtk/Gtkint.cmx -I Interface/ Interface/Interface.cmx 
+PROJECTLIB =  -I Loaders/Bitmap/  Loaders/Bitmap/Bitmap.cmx  -I Analyzer/ Analyzer/Analyzer.cmx -I Loaders/Wavefront Loaders/Wavefront/Wavefront.cmx -I 3DEngine/ 3DEngine/Engine.cmx -I Gtk/ Gtk/Gtkint.cmx -I Interface/ Interface/Interface.cmx 
 TYPESLIB= -I Types/ Types/BasicTypes.cmx
 PCKMANAGER= yum
 all: build clean
@@ -22,7 +22,7 @@ build.BasicTypes.cmx:
 build.3DEngine.cmx:
 	
 	@echo -n "generation du moteur 3D ...  :  "
-	@(cd 3DEngine/ && ${OCAML} ${GRAPHICSLIB} -I ../Types/ -c  ../Types/BasicTypes.cmx *.ml)
+	@(cd 3DEngine/ && ${OCAML} ${GRAPHICSLIB} -I ../Types/  ../Types/BasicTypes.cmx -I ../Analyzer/  ../Analyzer/Analyzer.cmx -c Engine.cmx *.ml)
 	@echo "[REUSSIE]"
 
 build.Interf.cmx:

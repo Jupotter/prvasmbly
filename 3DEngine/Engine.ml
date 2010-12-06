@@ -95,6 +95,8 @@ class vertex =
 			let v = new vertex in 
 			v#set_xyz (x,y,z);
 			v;
+		method flatten =
+			y <- 0.0;
 end;;
 
 (*create a polygon*)
@@ -102,6 +104,10 @@ class polygon = object(self)
 	val mutable v1 = new vertex;
 	val mutable v2 = new vertex;
 	val mutable v3 = new vertex;
+	method flatten = 
+		v1#flatten;
+		v2#flatten;
+		v3#flatten;
 	method apply_height (img:BasicTypes.image) =
 		v1#apply_height img;
 		v2#apply_height img;
@@ -396,6 +402,13 @@ class mesh = object(self)
 	method apply_color (img:BasicTypes.image) =
 		let app_plg (p:polygon) = p#apply_color img in
 		self#iter app_plg;	
+	method flatten = 
+		let rec flat = function
+			|[] -> ()
+			|e::l -> e#flatten
+		in
+		flat plg_list;
+
 	method apply_subdivision (scale:int) (img:BasicTypes.image) =
 		
 		working_list <- [];
@@ -415,6 +428,13 @@ class mesh = object(self)
 		GlDraw.ends();
 		GlList.ends();
 		_locked <- true;
+	method tesselate (img:BasicTypes.image) = 
+		Analyzer.tesselate img self;
+	method create_map (img:BasicTypes.image) (c:BasicTypes.color list) (f:float list) =
+		self#tesselate img#clone;
+		self#apply_color (img);
+		Analyzer.apply_height c f img;
+		self#apply_height (img);
 end;;
 
 
