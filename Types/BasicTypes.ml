@@ -6,13 +6,13 @@ class vector3 = object (self)
 	method get_y = y;
 	method get_z = z;
 	method get_xyz = (x,y,z);
-	method set_xyz (vx,vy,vz) =
+	method set_xyz (vx,vy,vz) = 
 		x <- vx;
 		y <- vy;
 		z <- vz;
-	method length =
+	method length = 
 		sqrt(x*.x +. y*.y +. z*.z);
-	method reverse =
+	method reverse = 
 		x <- 0.0 -. x;
 		x <- 0.0 -. y;
 		x <- 0.0 -. z;
@@ -43,7 +43,7 @@ class vector3 = object (self)
 	method make_uniform =
 		self#normalize;
 		x <- (x *. 0.5) +. 0.5;
-		y <- (y *. 0.5) +. 0.5;
+		y <- (y *. 0.5) +. 0.5; 
 		z <- (z *. 0.5) +. 0.5;
 end;;
 
@@ -79,21 +79,21 @@ class color =
 		int_of_float(r*.255.0),
 		int_of_float(g*.255.0),
 		int_of_float(b*.255.0));
-	method set_rgba_pck (_r,_g,_b,_a) =
+	method set_rgba_pck (_r,_g,_b,_a) = 
 		r<-_r;
 		g<-_g;
 		b<-_b;
 		a<-_a;
-	method set_rgb_pck (_r,_g,_b) =
+	method set_rgb_pck (_r,_g,_b) = 
 		r<-_r;
 		g<-_g;
 		b<-_b;
-	method set_rgba_pck_byte (_r,_g,_b,_a) =
+	method set_rgba_pck_byte (_r,_g,_b,_a) = 
 		r<-float_of_int(_r)/.255.0;
 		g<-float_of_int(_g)/.255.0;
 		b<-float_of_int(_b)/.255.0;
 		a<-float_of_int(_a)/.255.0;
-	method set_rgb_pck_byte (_r,_g,_b) =
+	method set_rgb_pck_byte (_r,_g,_b) = 
 		r<-float_of_int(_r)/.255.0;
 		g<-float_of_int(_g)/.255.0;
 		b<-float_of_int(_b)/.255.0;
@@ -107,47 +107,47 @@ class color =
 	method set_b_int value = b <- float_of_int(value) /. 255.0;
 	method set_a_int value = a <- float_of_int(value) /. 255.0;
 
-	method set_rgb red green blue =
+	method set_rgb red green blue = 
 		r <- red;
-		g <- green;
-		b <- blue;
-	method set_rgba red green blue alpha =
+		g <- green; 
+		b <- blue; 
+	method set_rgba red green blue alpha = 
 		self#set_rgb red green blue;
 		a <- alpha;
 
-	method set_rgb_int red green blue =
+	method set_rgb_int red green blue = 
 		r <- (float_of_int red) /. 255.0;
-		g <- (float_of_int green) /. 255.0;
+		g <- (float_of_int green) /. 255.0; 
 		b <- (float_of_int blue) /. 255.0;
 
-	method set_rgba_int red green blue alpha=
+	method set_rgba_int red green blue alpha= 
 		self#set_rgb_int red green blue;
-		a <- (float_of_int alpha) /. 255.0;
+		a <- (float_of_int alpha) /. 255.0; 
 
-	method set_rgb_byte red green blue =
-		self#set_rgb_int
+	method set_rgb_byte red green blue = 
+		self#set_rgb_int 
 			(int_of_char red)
 			(int_of_char green)
 			(int_of_char blue);
 
-	method set_rgba_byte red green blue alpha =
+	method set_rgba_byte red green blue alpha = 
 		self#set_rgb_byte red green blue;
-		a <- (float_of_int (int_of_char alpha)) /. 255.0;
-	method to_list_rgba =
+		a <- (float_of_int (int_of_char alpha)) /. 255.0; 
+	method to_list_rgba = 
 		[r;g;b;a]
-	method to_list_bgra =
+	method to_list_bgra = 
 		[b;g;r;a]
-	method to_list_rgb =
+	method to_list_rgb = 
 		[r;g;b]
-	method to_list_bgr =
+	method to_list_bgr = 
 		[b;g;r]
-	method to_array_rgba =
+	method to_array_rgba = 
 		[|r;g;b;a|]
-	method to_array_bgra =
+	method to_array_bgra = 
 		[|b;g;r;a|]
-	method to_array_rgb =
+	method to_array_rgb = 
 		[|r;g;b|]
-	method to_array_bgr =
+	method to_array_bgr = 
 		[|b;g;r|]
 	method add (c:color) =
 		r <- r +. c#get_r;
@@ -165,17 +165,23 @@ class color =
 		b <- b *. c#get_b;
 		a <- a *. c#get_a;
 
-	method merge (c:color) =
+	method mul_cst (f:float) =
+		r <- r *. f;
+		g <- g *. f;
+		b <- b *. f;
+		a <- a *. f;
+
+	method merge (c:color) = 
 		r <- (c#get_r +. r) /. 2.0;
 		g <- (c#get_g +. g) /. 2.0;
 		b <- (c#get_b +. b) /. 2.0;
 		a <- (c#get_a +. a) /. 2.0;
 
-	method equal (c:color) =
+	method equal (c:color) = 
 		(r = (c#get_r;) && g = (c#get_g;) && b = (c#get_b;) && a = (c#get_a;));
-	method notequal (c:color) =
+	method notequal (c:color) = 
 		(r <> c#get_r || g <> c#get_g || b <> c#get_b || a <> c#get_a);
-	method to_int32 = Int32.of_int(
+	method to_int32 = Int32.of_int( 
 		int_of_float(r) +
 		int_of_float(g) * 255 +
 		int_of_float(b) * 255 * 255 +
@@ -188,7 +194,7 @@ end;;
 
 
 
-class file_in (f:string) =
+class file_in (f:string) = 
    object(self)
 	val mutable filestream = open_in_bin f;
 	method read_byte = input_byte filestream;
@@ -201,10 +207,12 @@ class file_in (f:string) =
 
 	method read_line = input_line filestream;
 
+	method close = close_in filestream;
+
 	method read_n_char = function
 		|0 -> []
 		|n -> self#read_char::(self#read_n_char (n-1));
-	method read_int =
+	method read_int = 
 		let a0 = self#read_byte in
 		let a1 = self#read_byte in
 		let a2 = self#read_byte in
@@ -219,7 +227,7 @@ class file_in (f:string) =
 		let a = self#read_byte in
 		c#set_rgba_int r g b a;
 		c;
-	method read_color_rgb =
+	method read_color_rgb = 
 		let c = new color in
 		let r = self#read_byte in
 		let g = self#read_byte in
@@ -254,19 +262,19 @@ class file_out (f:string) =
 end;;
 
 class image (image_width:int) (image_height:int) =
-   object(self)
+   object(self) 
 
 	val mutable h = image_height;
 	val mutable w = image_width;
 	val mutable raw_data = Sdlvideo.create_RGB_surface [`SWSURFACE] image_width image_height 32  0x000000FFl  0x0000FF00l 0x00FF0000l  0xFF000000l;
-
+		
 	method get_bytes = Sdlgl.to_raw raw_data;
-	method get_pixel_at_address (add:int) =
+	method get_pixel_at_address (add:int) = 
 		let c = new color in
 		c#set_rgb_pck_byte((Sdlvideo.get_pixel_color raw_data (add / w) (add mod w)));
 		c
 
-	method get_pixel (x:int) (y:int) =
+	method get_pixel (x:int) (y:int) = 
 		let c = new color in
 		c#set_rgb_pck_byte((Sdlvideo.get_pixel_color raw_data x y));
 		c
@@ -275,11 +283,11 @@ class image (image_width:int) (image_height:int) =
 		Sdlvideo.put_pixel raw_data (add / w) (add mod w) c#to_int32
 	method set_pixel (c:color) (x:int) (y:int) =
 		Sdlvideo.put_pixel_color raw_data x y c#get_rgb_byte
-	method load_file (f:string)=
+	method load_file (f:string)= 
 		raw_data <- Sdlloader.load_image f;
 		w<-(Sdlvideo.surface_info raw_data).Sdlvideo.w;
 		h<-(Sdlvideo.surface_info raw_data).Sdlvideo.h;
-	method save_file (f:string)=
+	method save_file (f:string)= 
 		Sdlvideo.save_BMP raw_data f;
 	method height = h
 
@@ -292,7 +300,7 @@ class image (image_width:int) (image_height:int) =
 			done;
 		done;
 		i;
-	method merge (i:image) =
+	method merge (i:image) = 
 		let minh = min i#height h in
 		let minw = min i#width w in
 		for x = 0 to minh - 1 do
@@ -303,54 +311,23 @@ class image (image_width:int) (image_height:int) =
 			done;
 		done;
 		;
-
-	method merge_and (i:image) =
-		let minh = min i#height h in
-		let minw = min i#width w in
-		for x = 0 to minh-1 do
-			for y = 0 to minw-1 do
-				if not((let n=self#get_pixel x y in n#is_white)
-				&& (let n=i#get_pixel x y in n#is_white)) then
-					let col = new color in
-					col#set_rgb 0. 0. 0.;
-					self#set_pixel col x y
-			done
-		done
-
-	method merge_or (i:image) =
-		let minh = min i#height h in
-		let minw = min i#width w in
-		for x = 0 to minh-1 do
-			for y = 0 to minw-1 do
-				if not((let n=self#get_pixel x y in n#is_white)
-				|| (let n=i#get_pixel x y in n#is_white)) then
-					let col = new color in
-					col#set_rgb 0. 0. 0.;
-					self#set_pixel col x y
-				else
-					let col = new color in
-					col#set_rgb 1. 1. 1.;
-					self#set_pixel col x y
-			done
-		done
-
-	method foreach_tested_pixel (test:color->bool) (func:color->color) =
+	method foreach_tested_pixel (test:color->bool) (func:color->color) = 
 		for x = 0 to h - 1 do
 			for y = 0 to w - 1 do
 				if test (self#get_pixel x y) then
-				self#set_pixel
+				self#set_pixel 
 					( func (self#get_pixel x y ) ) x y ;
 			done;
 		done;
-	method foreach_pixel (func:color->color) =
+	method foreach_pixel (func:color->color) = 
 		for x = 0 to h - 1 do
 			for y = 0 to w - 1 do
-				self#set_pixel
+				self#set_pixel 
 					( func (self#get_pixel x y ) ) x y ;
 			done;
 		done;
 
-	method iter (func:color->unit) =
+	method iter (func:color->unit) = 
 		for x = 0 to h - 1 do
 			for y = 0 to w - 1 do
 				 func (self#get_pixel x y );
