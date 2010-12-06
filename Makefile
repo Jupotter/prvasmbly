@@ -56,7 +56,7 @@ clean:
 	@rm -f Loaders/Wavefront/*.{cmx,cmi,cmo,o,cmxa,a}
 	@rm -f Types/*.{cmx,cmi,cmo,o,cmxa,a}
 	@rm -f Gtk/*.{cmx,cmi,cmo,o,cmxa,a}
-	@echo "[REUSSI]"
+	@echo "[SUCCESSFUL]"
 start:
 	@clear
 	@echo "Building project:"
