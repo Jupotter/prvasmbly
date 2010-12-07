@@ -185,7 +185,7 @@ out
 
 (* Return the height map in Black and white*)
 
-let apply_height (h:float) (c:BasicTypes.color list) (f:float list) (i:BasicTypes.image) =
+let apply_height (c:BasicTypes.color list) (f:float list) (i:BasicTypes.image) =
 	let rec set_height (cl:BasicTypes.color list) (hl:float list) (color_in:BasicTypes.color) =
 	 	match (cl,hl) with
 			|([],[]) -> new BasicTypes.color
