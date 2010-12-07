@@ -40,7 +40,9 @@ let right_bar () =
 			~border_width:4
 			~height:200
 			~width:200() in
-		(* FIX ME : les commande pour construire la bare de gauche *)
+		let sw = GBin.scrolled_window () ~packing: vpaned#add2
+			~hpolicy: `AUTOMATIC ~vpolicy: `AUTOMATIC in
+		let list_view = GTree.view () ~packing:sw#add in
 		vpaned#coerce
 
 let gtk_init () =
