@@ -1,3 +1,6 @@
+let collist=["1"]
+let highlist=[0.5]
+
 let engine_load_map file =
 	print_string ("chargement du fichier : " ^ file); flush stdout(* FIX ME : Recharger une map *)
 
@@ -31,8 +34,7 @@ let gtk_open_bitmap (parent_window) =
 
 let destroy () = GMain.Main.quit ()
 
-let refresh3D () =
-	let window = new Engine.display in
+let refresh3D window ()=
 	window#draw
 
 let right_bar () =
@@ -40,13 +42,27 @@ let right_bar () =
 			~border_width:4
 			~height:200
 			~width:200() in
-	let hpaned = GPack.paned `HORIZONTAL
-			~border_width:4
-			~height:200
-			~width:200() in
 		let sw = GBin.scrolled_window () ~packing: vpaned#add2
 			~hpolicy: `AUTOMATIC ~vpolicy: `AUTOMATIC in
-		let list_view = GTree.view () ~packing:sw#add in
+		let sw2 = GBin.scrolled_window () ~packing: vpaned#add1
+			~hpolicy: `AUTOMATIC ~vpolicy: `AUTOMATIC in
+		let cols = new GTree.column_list in
+		let str_col = cols#add Gobject.Data.string in
+		let int_col = cols#add Gobject.Data.float in
+		let model = GTree.list_store cols in
+		let list_view = GTree.view ~model ~packing:sw2#add () in
+		let i::_ = collist in
+		let j::_ = highlist in
+		let pos = model#append () in
+		model#set ~row:pos ~column:str_col i;
+		model#set ~row:pos ~column:int_col j;
+		let renderer = GTree.cell_renderer_text [] in
+		let irenderer = GTree.cell_renderer_text [] in
+		let column = GTree.view_column ~title:"Messages"
+			~renderer:(renderer, ["text", str_col]) () in
+		let icolumn = GTree.view_column ~renderer:(renderer, ["text", int_col]) () in
+		list_view#append_column column;
+		list_view#append_column icolumn;
 		vpaned#coerce
 
 let gtk_init () =
@@ -73,7 +89,8 @@ let gtk_init () =
 					 ~packing:hpaned#add1 ()
 					 in
 
-		let _ = openGLArea#connect#display ~callback:refresh3D in
+		let window2 = new Engine.display in
+		let _ = openGLArea#connect#display ~callback:(refresh3D (window2)) in
 
 		gtk_open_bitmap window;
 		window#show ();
