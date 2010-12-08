@@ -14,7 +14,29 @@ class colorlist = object(self)
 		in
 		rem scrolled_panel#all_children;
 
-		(* FIX ME : Creation de la tree view *)
+		let str_col = columnlist#add Gobject.Data.string in
+		let fl_col  = columnlist#add Gobject.Data.float in
+		let model = GTree.list_store columnlist in
+		let list_view = GTree.view ~model ~packing:scrolled_panel#add () in
+
+		let rec put_list = function
+			|([],[]) -> ()
+			|(hf::tf,hs::ts) ->
+				let pos = model#append () in
+				model#set ~row:pos ~column:fl_col hf;
+				model#set ~row:pos ~column:str_col hs;
+				put_list (tf,ts)
+			|_ -> ()
+		in put_list (flist,slist);
+
+		let renderer=GTree.cell_renderer_text [] in
+		let scolumn=GTree.view_column ~title:"Color"
+			~renderer:(renderer, ["text",str_col]) () in
+		let fcolumn=GTree.view_column ~title:"Height"
+			~renderer:(renderer, ["text",fl_col]) () in
+		list_view#append_column scolumn;
+		list_view#append_column fcolumn;
+
 		();
 
 	method add_color (c:BasicTypes.color) (f:float) =
@@ -28,7 +50,7 @@ class colorlist = object(self)
 		();
 
 
-	method create= 
+	method create=
 		self#refresh;
 		scrolled_panel#coerce;
 
@@ -90,7 +112,7 @@ let right_bar () =
 			~border_width:4
 			~height:200
 			~width:200() in
-		let clist = new colorlist in		
+		let clist = new colorlist in
 		vpaned#add1 clist#create;
 		(*FIX ME : la création de tout sauf de la liste de couleur*)
 		vpaned#coerce
