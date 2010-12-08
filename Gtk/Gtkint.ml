@@ -1,12 +1,57 @@
-let collist=["1"]
-let highlist=[0.5]
+class colorlist = object(self)
+	val mutable clist = ([]:BasicTypes.color list)
+	val mutable flist = ([]:float list)
+	val mutable slist = ([]:string list)
+	val mutable columnlist = new GTree.column_list
+	val mutable scrolled_panel = GBin.scrolled_window
+    			~hpolicy:`AUTOMATIC ~vpolicy:`AUTOMATIC ()
+	method refresh = ();
+		let rec rem = function
+			|[] -> ()
+			|e::l ->
+				scrolled_panel#remove e;
+				rem l
+		in
+		rem scrolled_panel#all_children;
+
+		(* FIX ME : Creation de la tree view *)
+		();
+
+	method add_color (c:BasicTypes.color) (f:float) =
+		 clist <- c::clist;
+		 flist <- f::flist;
+		 slist <- 	(string_of_float(c#get_r) ^ ":" ^
+				string_of_float(c#get_b) ^ ":" ^
+				string_of_float(c#get_g) ^ ":" ^
+				string_of_float(c#get_a))::slist;
+		self#refresh;
+		();
+
+
+	method create= 
+		self#refresh;
+		scrolled_panel#coerce;
+
+
+	method set_color_height (c:string) (f:float) =
+		let rec scol = function
+			|(_, []) |  ([], _) -> []
+			|(_::hlist,strng::_)  when strng = c -> f::hlist
+			|(height::hlist,_::slist) -> height::(scol (hlist, slist))
+		in
+		flist <- (scol (flist, slist));
+		self#refresh;
+		();
+
+end;;
 
 let engine_load_map file =
-	print_string ("chargement du fichier : " ^ file); flush stdout(* FIX ME : Recharger une map *)
+	print_string ("chargement du fichier : " ^ file); flush stdout
+	(* FIX ME : Recharger une map *)
 
 
 
-let gtk_open_bitmap (parent_window) =
+let gtk_open_bitmap (parent_window) (map3D) =
 
 	let filesel = GWindow.file_selection
 	~title:"Open File"
@@ -20,9 +65,8 @@ let gtk_open_bitmap (parent_window) =
 
 
 		let destroy () = () in
-		let destroyf () = filesel#destroy () in (* destruction forcée *)
-		let load () =     engine_load_map filesel#filename ; filesel#destroy () in
-		(* pas sur que opengl accepte de se faire flushé avec callback a verifier  au pire virer le callback*)
+		let destroyf () = filesel#destroy () in
+		let load () = engine_load_map filesel#filename ; filesel#destroy () in
 
 
 	let _ = filesel#connect#destroy ~callback:destroy in
@@ -34,35 +78,21 @@ let gtk_open_bitmap (parent_window) =
 
 let destroy () = GMain.Main.quit ()
 
-let refresh3D window ()=
-	window#draw
+
+let refresh3D area window ()=
+	let _ = window#draw in
+	let _ = area#swap_buffers () in ()
+
+
 
 let right_bar () =
 	let vpaned = GPack.paned `VERTICAL
 			~border_width:4
 			~height:200
 			~width:200() in
-		let sw = GBin.scrolled_window () ~packing: vpaned#add2
-			~hpolicy: `AUTOMATIC ~vpolicy: `AUTOMATIC in
-		let sw2 = GBin.scrolled_window () ~packing: vpaned#add1
-			~hpolicy: `AUTOMATIC ~vpolicy: `AUTOMATIC in
-		let cols = new GTree.column_list in
-		let str_col = cols#add Gobject.Data.string in
-		let int_col = cols#add Gobject.Data.float in
-		let model = GTree.list_store cols in
-		let list_view = GTree.view ~model ~packing:sw2#add () in
-		let i::_ = collist in
-		let j::_ = highlist in
-		let pos = model#append () in
-		model#set ~row:pos ~column:str_col i;
-		model#set ~row:pos ~column:int_col j;
-		let renderer = GTree.cell_renderer_text [] in
-		let irenderer = GTree.cell_renderer_text [] in
-		let column = GTree.view_column ~title:"Messages"
-			~renderer:(renderer, ["text", str_col]) () in
-		let icolumn = GTree.view_column ~renderer:(renderer, ["text", int_col]) () in
-		list_view#append_column column;
-		list_view#append_column icolumn;
+		let clist = new colorlist in		
+		vpaned#add1 clist#create;
+		(*FIX ME : la création de tout sauf de la liste de couleur*)
 		vpaned#coerce
 
 let gtk_init () =
@@ -83,16 +113,18 @@ let gtk_init () =
 		let hpaned = GPack.paned `HORIZONTAL
 					 ~packing:vpaned#add2 () in
 		hpaned#add2 (right_bar());
-		let openGLArea = GlGtk.area [`RGBA; `DOUBLEBUFFER; `DEPTH_SIZE 16]
+		let openGLArea = GlGtk.area [`USE_GL; `RGBA; `DOUBLEBUFFER; `DEPTH_SIZE 16]
 					 ~width:600
 					 ~height:400
 					 ~packing:hpaned#add1 ()
 					 in
-
-		let window2 = new Engine.display in
-		let _ = openGLArea#connect#display ~callback:(refresh3D (window2)) in
-
-		gtk_open_bitmap window;
+		let map3D = new Engine.mesh in
+		let display = new Engine.display in
+		display#set_size ~width:640 ~height:480 ();
+		openGLArea#set_size ~width:640 ~height:480;
+		let _ = openGLArea#connect#display ~callback:(refresh3D (openGLArea) (display)) in
+		gtk_open_bitmap window map3D;
+		display#add_mesh map3D;
 		window#show ();
 		openGLArea#make_current();
 		openGLArea#swap_buffers ();

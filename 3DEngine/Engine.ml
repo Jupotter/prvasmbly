@@ -420,7 +420,7 @@ class mesh = object(self)
 		self#iter app_plg;			
 	(*optimize and create a GL list with the mesh*)	
 	(*NOT YET TESTED ! DO NOT USE*)	
-	method lock = 
+	method lock =
 		gllist <- GlList.create `compile;
 		GlDraw.begins `triangles;
 			let drawplg (plg:polygon) = plg#draw; in
@@ -430,7 +430,10 @@ class mesh = object(self)
 		_locked <- true;
 	method tesselate (img:BasicTypes.image) = 
 		Analyzer.tesselate img self;
+	
 	method create_map (img:BasicTypes.image) (c:BasicTypes.color list) (f:float list) =
+		plg_list <- [];
+		self#add_grild 0 0 256 (img#width - 1) (img#height - 1);
 		self#tesselate img#clone;
 		self#apply_color (img);
 		Analyzer.apply_height c f img;
@@ -582,6 +585,9 @@ class display =
 			_sprite_list <- s::_sprite_list;
 		method add_box b = 
 			_box_list <- b::_box_list;
+		method set_size ?(width:int=640) ?(height:int=480) () =
+				GlDraw.viewport 0 0 width height;
+				()
 		(*drawing method*)
 		method draw =
 	
