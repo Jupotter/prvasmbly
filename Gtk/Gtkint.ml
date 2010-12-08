@@ -9,12 +9,12 @@ class colorlist = object(self)
 		let rec rem = function
 			|[] -> ()
 			|e::l ->
-							
 				scrolled_panel#remove e;
 				rem l
 		in
 		rem scrolled_panel#children;
-
+		
+		columnlist <- new GTree.column_list;
 		let str_col = columnlist#add Gobject.Data.string in
 		let fl_col  = columnlist#add Gobject.Data.float in
 		let model = GTree.list_store columnlist in
