@@ -47,9 +47,9 @@ class colorlist = object(self)
 				string_of_float(c#get_b) ^ ":" ^
 				string_of_float(c#get_g) ^ ":" ^
 				string_of_float(c#get_a))::slist;
-		self#refresh;
 		();
-
+	method get_color_list = clist;
+	method get_height_list = flist;
 	method create_color_list (img:BasicTypes.image) = 
 		let clist = Analyzer.get_image_colors img in
 		let rec foreach = function
@@ -58,6 +58,7 @@ class colorlist = object(self)
 					foreach l
 		in
 		foreach clist;
+		self#refresh;
 		();
 	method create=
 		self#refresh;
@@ -76,11 +77,12 @@ class colorlist = object(self)
 
 end;;
 
-let engine_load_map file clist =
+let engine_load_map file map3D clist =
 	print_string ("chargement du fichier : " ^ file); flush stdout;
 	let img = new BasicTypes.image 1 1 in
 	img#load_file file;
-	clist#create_color_list img
+	clist#create_color_list img;
+	map3D#create_map img clist#get_color_list clist#get_height_list
 	
 	(* FIX ME : Recharger une map *)
 
@@ -101,7 +103,7 @@ let gtk_open_bitmap (parent_window) (map3D) (clist)=
 
 		let destroy () = () in
 		let destroyf () = filesel#destroy () in
-		let load () = engine_load_map filesel#filename clist; filesel#destroy () in
+		let load () = engine_load_map filesel#filename map3D clist; filesel#destroy () in
 
 
 	let _ = filesel#connect#destroy ~callback:destroy in
@@ -156,10 +158,13 @@ let gtk_init () =
 					 in
 		let map3D = new Engine.mesh in
 		let display = new Engine.display in
-		display#set_size ~width:640 ~height:480 ();
+		display#set_size ~width:640 ~height:480;
 		openGLArea#set_size ~width:640 ~height:480;
 		let _ = openGLArea#connect#display ~callback:(refresh3D (openGLArea) (display)) in
+		let _ = openGLArea#connect#reshape ~callback:(display#set_size ) in
+		
 		gtk_open_bitmap window map3D clist;
+		
 		display#add_mesh map3D;
 		window#show ();
 		openGLArea#make_current();

@@ -18,6 +18,18 @@ class camera = object(self)
 			_x <- x;
 			_y <- y;
 			_z <- z;
+		method move_forward (factor:float) =
+			let vectx = (lck_x -. _x) in
+			let vecty = (lck_y -. _y) in
+			let vectz = (lck_z -. _z) in
+			let norm = sqrt( vectx *. vectx +. vecty *. vecty +. vectz *. vectz) in
+			self#move((vectx /. norm), (vecty /. norm),(vectz /. norm));
+		method move_backward (factor:float) =
+			let vectx = (lck_x -. _x) in
+			let vecty = (lck_y -. _y) in
+			let vectz = (lck_z -. _z) in
+			let norm = sqrt( vectx *. vectx +. vecty *. vecty +. vectz *. vectz) in
+			self#move(0.0-.(vectx /. norm), 0.0-.(vecty /. norm),0.0-.(vectz /. norm));
 		method set_lookat (x,y,z) = 
 			lck_x <- x;
 			lck_y <- y;
@@ -434,9 +446,13 @@ class mesh = object(self)
 	method create_map (img:BasicTypes.image) (c:BasicTypes.color list) (f:float list) =
 		plg_list <- [];
 		self#add_grild 0 0 256 (img#width - 1) (img#height - 1);
-		self#tesselate img#clone;
-		self#apply_color (img);
+		let colorblur = img#clone in
+		self#tesselate colorblur#clone;
+		
+		Analyzer.blur colorblur;
+		self#apply_color (colorblur);
 		Analyzer.apply_height c f img;
+		Analyzer.blur img;
 		self#apply_height (img);
 end;;
 
@@ -585,9 +601,8 @@ class display =
 			_sprite_list <- s::_sprite_list;
 		method add_box b = 
 			_box_list <- b::_box_list;
-		method set_size ?(width:int=640) ?(height:int=480) () =
-				GlDraw.viewport 0 0 width height;
-				()
+		method set_size ~width ~height =
+				GlDraw.viewport 0 0 width height
 		(*drawing method*)
 		method draw =
 	
