@@ -447,13 +447,15 @@ class mesh = object(self)
 		plg_list <- [];
 		self#add_grild 0 0 256 (img#width - 1) (img#height - 1);
 		let colorblur = img#clone in
+		Analyzer.blur colorblur;
 		self#tesselate colorblur#clone;
 		
-		Analyzer.blur colorblur;
+		
 		self#apply_color (colorblur);
 		Analyzer.apply_height c f img;
 		Analyzer.blur img;
 		self#apply_height (img);
+		self#lock;
 end;;
 
 
@@ -581,6 +583,7 @@ class display =
 		val mutable moving_dw = false;
 		val mutable moving_lf = false;
 		val mutable moving_rg = false;
+		val mutable is_event = false;
 		val mutable c_cam = new camera;
 		(*get the current camera*)
 		method get_camera = c_cam;
@@ -647,7 +650,42 @@ class display =
 		method test_click (x,y) = 
 			let clickspr (s:sprite)  = s#click(float_of_int(x) /. _w,float_of_int(y)/. _h) in
 			List.iter clickspr _sprite_list;
+		method enable_event =
+			is_event = true;
+		method disable_event = 
+			is_event = false;
 
+		method camera_up_on =
+			moving_up = true;
+		method camera_up_off =
+			moving_up = false;
+
+		method camera_down_on =
+			moving_dw = true;
+		method camera_down_off =
+			moving_dw = false;
+
+		method camera_left_on =
+			moving_lf = true;
+		method camera_left_off =
+			moving_lf = false;
+
+		method camera_right_on =
+			moving_rg = true;
+		method camera_right_off =
+			moving_rg = false;
+
+		method update =
+			if is_event then
+				self#force_update
+			else
+				()
+		method force_update =
+			if moving_up then begin c_cam#move(0.0,0.0,0.2); end else begin (); end;
+			if moving_dw then begin c_cam#move(0.0,0.0,-0.2);  end else begin (); end;
+			if moving_lf then begin c_cam#move(0.2,0.0,0.0);  end else begin (); end;
+			if moving_rg then begin c_cam#move(-0.2,0.0,0.0); end else begin (); end;
+		
 end;;
 		
 class window =
