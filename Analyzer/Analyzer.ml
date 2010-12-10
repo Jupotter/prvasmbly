@@ -89,9 +89,8 @@ for x=0 to (i#width-1) do
 done
 
 (* Divide an image by 2 on each axis, with priority to white pixel *)
-(*errreur il faut traiter x = out#width - 1 et y = out#height à part*)
 let div_two (i:BasicTypes.image) =
-let out = new BasicTypes.image (i#width / 2) (i#height / 2) in
+let out = new BasicTypes.image (i#width / 2 + 1) (i#height / 2 + 1) in
 for x=0 to ((out#width ) - 1) do
 	for y=0 to ((out#height) - 1) do
 	let col = new BasicTypes.color in
