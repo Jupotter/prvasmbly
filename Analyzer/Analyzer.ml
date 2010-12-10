@@ -89,9 +89,8 @@ for x=0 to (i#width-1) do
 done
 
 (* Divide an image by 2 on each axis, with priority to white pixel *)
-(*errreur il faut traiter x = out#width - 1 et y = out#height à part*)
 let div_two (i:BasicTypes.image) =
-let out = new BasicTypes.image (i#width / 2) (i#height / 2) in
+let out = new BasicTypes.image (i#width / 2 + 1) (i#height / 2 + 1) in
 for x=0 to ((out#width ) - 1) do
 	for y=0 to ((out#height) - 1) do
 	let col = new BasicTypes.color in
@@ -239,3 +238,30 @@ let tesselate (hm:BasicTypes.image) (meshmap) =
 	meshmap#apply_subdivision 8 div8;
 	end
 
+let blur (img:BasicTypes.image) =
+	begin
+	for x = 1 to img#width - 2 do
+		for y = 1 to img#height - 2 do
+			let color = (img#get_pixel x y) in
+			color#mul_cst 0.2;
+			let t1 = (img#get_pixel (x + 1) y) in t1#mul_cst 0.1;
+			color#add t1;
+			let t2 = (img#get_pixel x (y + 1)) in t2#mul_cst 0.1;
+			color#add t2;
+			let t3 = (img#get_pixel x (y - 1)) in t3#mul_cst 0.1;
+			color#add t3;
+			let t4 = (img#get_pixel (x - 1) y) in t4#mul_cst 0.1;
+			color#add t4;
+
+			let t5 = (img#get_pixel (x + 1) (y + 1)) in t5#mul_cst 0.1;
+			color#add t5;
+			let t6 = (img#get_pixel (x - 1) (y + 1)) in t6#mul_cst 0.1;
+			color#add t6;
+			let t7 = (img#get_pixel (x + 1) (y - 1)) in t7#mul_cst 0.1;
+			color#add t7;
+			let t8 = (img#get_pixel (x - 1) (y - 1)) in t8#mul_cst 0.1;
+			color#add t8;
+			img#set_pixel color x y;
+		done;	
+	done;
+	end

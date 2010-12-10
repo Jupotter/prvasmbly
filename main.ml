@@ -15,21 +15,49 @@ let load_bitmap (win:Engine.window) =
 		Interface.load_height_map "carte.bmp" win;
 		end
 
-		
-let main() = 
-	Gtkint.gtk_init();
-	sdl_init()
-	
+let gtk_init = 
+	if ((Array.length Sys.argv) > 1) then
+		begin
+		Gtkint.gtk_init Sys.argv.(1) ();
+		end
+	else
+		begin
+		Gtkint.gtk_init "" ();
+		end	
 
+let main() = 
+	
+	
+	begin
+	sdl_init();
+	Arg.parse [
+				("-e",
+				Arg.Unit (fun () -> 
+					begin
+						exit 0;
+					end),
+				"export only the map to a wavefron file");
+				("--sdl",
+				Arg.Unit (fun () -> 
+					begin
+						sdl_init();
+						let win = new Engine.window in	
+						Interface.initialize win;
+						load_bitmap win;
+							while true do
+								win#events;
+								win#draw;
+								win#update;
+							done;
+						exit 0;
+					end),
+				"use a simple SDL window");
+				]
+			(fun r -> ();) "usage : ";
+	
+	end
 (*let sdl_window () = 
-	let win = new Engine.window in	
-	Interface.initialize win;
-	load_bitmap win;
-		while true do
-			win#events;
-			win#draw;
-			win#update;
-		done
+
 	*)
 
 

@@ -2,9 +2,12 @@ class colorlist = object(self)
 	val mutable clist = ([]:BasicTypes.color list)
 	val mutable flist = ([]:float list)
 	val mutable slist = ([]:string list)
+	val mutable img = new BasicTypes.image 1 1
 	val mutable columnlist = new GTree.column_list
 	val mutable scrolled_panel = GBin.scrolled_window
     			~hpolicy:`AUTOMATIC ~vpolicy:`AUTOMATIC ()
+	method get_img = img;
+	method set_img i = img <- i;
 	method refresh = ();
 		let rec rem = function
 			|[] -> ()
@@ -43,13 +46,12 @@ class colorlist = object(self)
 	method add_color (c:BasicTypes.color) (f:float) =
 		 clist <- c::clist;
 		 flist <- f::flist;
-		 slist <- 	(string_of_float(c#get_r) ^ ":" ^
-				string_of_float(c#get_b) ^ ":" ^
-				string_of_float(c#get_g) ^ ":" ^
-				string_of_float(c#get_a))::slist;
-		self#refresh;
+		 slist <- 	("R[" ^ string_of_float(c#get_r) ^ "]:G[" ^
+				string_of_float(c#get_b) ^ "]:B[" ^
+				string_of_float(c#get_g) ^ "]")::slist;
 		();
-
+	method get_color_list = clist;
+	method get_height_list = flist;
 	method create_color_list (img:BasicTypes.image) = 
 		let clist = Analyzer.get_image_colors img in
 		let rec foreach = function
@@ -58,6 +60,7 @@ class colorlist = object(self)
 					foreach l
 		in
 		foreach clist;
+		self#refresh;
 		();
 	method create=
 		self#refresh;
@@ -73,20 +76,39 @@ class colorlist = object(self)
 		flist <- (scol (flist, slist));
 		self#refresh;
 		();
-
+	
 end;;
 
-let engine_load_map file clist =
+let engine_load_map file display map3D clist =
 	print_string ("chargement du fichier : " ^ file); flush stdout;
 	let img = new BasicTypes.image 1 1 in
 	img#load_file file;
-	clist#create_color_list img
-	
-	(* FIX ME : Recharger une map *)
+	clist#create_color_list img;
+	clist#set_img img;
+	display#clear_sprites;
+	let minimap = new Engine.sprite img#clone in
+	display#add_sprite minimap;
+	minimap#set_size (0.2,0.2);
+	minimap#set_position (0.75, 0.05);
+
+	map3D#create_map img#clone clist#get_color_list clist#get_height_list
 
 
+let gtk_apply_color_height map3D clist =
+	map3D#create_map clist#get_img#clone clist#get_color_list clist#get_height_list
 
-let gtk_open_bitmap (parent_window) (map3D) (clist)=
+let gtk_select_height glade clist =
+	let hselector = new GWindow.window
+		(GtkWindow.Window.cast(Glade.get_widget glade "hselector"))in
+		(*FIX ME definir les evenement adequat*)
+		hselector#show
+
+let gtk_help glade = 
+	let help = new GWindow.window
+		(GtkWindow.Window.cast(Glade.get_widget glade "help"))in
+		help#show
+
+let gtk_open_bitmap (parent_window) (display) (map3D) (clist)=
 
 	let filesel = GWindow.file_selection
 	~title:"Open File"
@@ -101,7 +123,7 @@ let gtk_open_bitmap (parent_window) (map3D) (clist)=
 
 		let destroy () = () in
 		let destroyf () = filesel#destroy () in
-		let load () = engine_load_map filesel#filename clist; filesel#destroy () in
+		let load () = engine_load_map filesel#filename display map3D clist; filesel#destroy () in
 
 
 	let _ = filesel#connect#destroy ~callback:destroy in
@@ -129,9 +151,40 @@ let right_bar clist () =
 		vpaned#add1 clist#create;
 		(*FIX ME : la création de tout sauf de la liste de couleur*)
 		vpaned#coerce
+let on_area_key_press display openGLArea (key:GdkEvent.Key.t) = 
+	let keystr = GdkEvent.Key.string key in
+	let update = function
+		|"z" ->begin display#camera_up; (); end
+		|"s" ->begin display#camera_down; ();end
+		|"d" ->begin display#camera_right; ();end
+		|"q" ->begin display#camera_left; ();end
+		|"u" ->begin display#camera_forward; ();end
+		|"j" ->begin display#camera_backward; ();end
+		|"w" ->begin display#toggle_wireframe; ();end
+		|"m" ->begin display#toggle_sprites; ();end
+		|"a" -> begin display#toggle_camera; (); end
+		| _ ->();
+	in
+	let _ = update keystr in
+		openGLArea#misc#draw None;
+		true
 
-let gtk_init () =
+
+let default_map file window display map3D clist = 
+	if file = "" then
+		gtk_open_bitmap window display map3D clist
+	else
+		engine_load_map file display map3D clist
+
+let gtk_init file () =
 	let _ = GMain.init () in
+	Glade.init ();
+	let glade =  Glade.create ~file:"Resources/glade1.glade" () in
+
+	
+	let help = new GWindow.window
+		(GtkWindow.Window.cast(Glade.get_widget glade "help"))in
+
 	let window = GWindow.window ~width:800 ~height:480 () in
 	begin
 		let clist = new colorlist in
@@ -156,14 +209,19 @@ let gtk_init () =
 					 in
 		let map3D = new Engine.mesh in
 		let display = new Engine.display in
-		display#set_size ~width:640 ~height:480 ();
+		display#set_size ~width:640 ~height:480;
 		openGLArea#set_size ~width:640 ~height:480;
 		let _ = openGLArea#connect#display ~callback:(refresh3D (openGLArea) (display)) in
-		gtk_open_bitmap window map3D clist;
+		let _ = openGLArea#connect#reshape ~callback:(display#set_size ) in
+		openGLArea#misc#set_sensitive true;
+		openGLArea#misc#set_can_focus true;
+		openGLArea#misc#set_can_default true;
+		openGLArea#event#connect#key_press ~callback:(on_area_key_press display openGLArea);
 		display#add_mesh map3D;
 		window#show ();
 		openGLArea#make_current();
 		openGLArea#swap_buffers ();
+		default_map file window display map3D clist;
 		GMain.Main.main ();
   	end
 
