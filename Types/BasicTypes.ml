@@ -1,3 +1,49 @@
+class vector2 = object (self)
+	val mutable x = 0.0
+	val mutable y = 0.0
+	method get_x = x;
+	method get_y = y;
+	method set_x vx = x <- vx;
+	method set_y vy = y <- vy;
+	method get_xy = (x,y);
+	method set_xy (vx,vy) = 
+		x <- vx;
+		y <- vy;
+	method length = 
+		sqrt(x*.x +. y*.y);
+	method reverse = 
+		x <- 0.0 -. x;
+		x <- 0.0 -. y;
+
+	method dot (v:vector2)=
+		x*.v#get_x +. y*.v#get_y;
+
+
+	method normalize =
+		let l = self#length in
+			if l = 0.0 then
+				begin
+					x <- 0.0;
+					y <- 0.0;
+				end
+			else
+				begin
+					x <- x /. l;
+					y <- y /. l;
+				end
+	method add (v:vector2) =
+		x<- x +. v#get_x;
+		y<- y +. v#get_y;
+	method sub (v:vector2) =
+		x<- x -. v#get_x;
+		y<- y -. v#get_y;
+
+	method make_uniform =
+		self#normalize;
+		x <- (x *. 0.5) +. 0.5;
+		y <- (y *. 0.5) +. 0.5; 
+end;;
+
 class vector3 = object (self)
 	val mutable x = 0.0
 	val mutable y = 0.0
@@ -5,6 +51,9 @@ class vector3 = object (self)
 	method get_x = x;
 	method get_y = y;
 	method get_z = z;
+	method set_x vx = x <- vx;
+	method set_y vy = y <- vy;
+	method set_z vz = z <- vz;
 	method get_xyz = (x,y,z);
 	method set_xyz (vx,vy,vz) = 
 		x <- vx;

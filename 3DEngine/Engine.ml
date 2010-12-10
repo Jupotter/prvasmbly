@@ -1,3 +1,4 @@
+let pi = 3.1415926535897932384626433832795
 class camera = object(self)
 		val mutable _x = 0.0
 		val mutable _y = 9.0
@@ -5,7 +6,31 @@ class camera = object(self)
 		val mutable lck_x = 0.0
 		val mutable lck_y = 0.1
 		val mutable lck_z = 5.0
+		val mutable bird_mode = false;
+		method is_bird_mode = bird_mode;
+		method reset_position =
+			_x <- 0.0;
+			_y <- 9.0;
+			_z <- -5.0;
+			lck_x <- 0.0;
+			lck_y <- 0.1;
+			lck_z <- 5.0;
+			bird_mode <- false;
+		method normal_mode =
+			_y <- 9.0;
+			lck_x <- _x;
+			lck_y <- _y -. 8.9;
+			lck_z <- _z +. 10.0;
+			bird_mode <- false;
 
+		method bird_mode =
+			_y <- 5.0;
+			_x <- (if (_x < 1.0) then 1.0 else _x);
+			_z <- (if (_z < 1.0) then 1.0 else _z);
+			lck_x <- _x;
+			lck_y <- _y;
+			lck_z <- _z +. 1.0;
+			bird_mode <- true;
 
 		method move (mx,my,mz) = 
 			_x<-_x+.mx;
@@ -18,6 +43,66 @@ class camera = object(self)
 			_x <- x;
 			_y <- y;
 			_z <- z;
+		method normalize = 
+			let vectx = (lck_x -. _x) in
+			let vecty = (lck_y -. _y) in
+			let vectz = (lck_z -. _z) in
+			let norm = sqrt( vectx *. vectx +. vecty *. vecty +. vectz *. vectz) in
+			lck_x <- _x +. (vectx /. norm);
+			lck_y <- _y +. (vecty /. norm);
+			lck_z <- _z +. (vectz /. norm);
+		method move_up_down (factor:float) =
+			let  depl = new BasicTypes.vector3 in
+			depl#set_xyz((lck_x -. _x),(lck_y -. _y), (lck_z -. _y));
+           		let dReduction = depl#length in
+            		depl#normalize;
+           
+            		depl#set_y 
+				(depl#get_y +. 
+					(factor *. 
+						(1.0 +. 
+							(if depl#get_y < 0.0 then 0.0-.(depl#get_y) else depl#get_y)
+						)
+					)
+				);
+
+            		depl#normalize;
+            		lck_x <- _x +. (depl#get_x *. dReduction);
+			lck_y <- _y +. (depl#get_y *. dReduction);
+			lck_z <- _z +. (depl#get_z *. dReduction);
+
+		method move_left_right (factor:float) =
+			let depl = new BasicTypes.vector3 in
+			depl#set_xyz((lck_x -. _x),(lck_y -. _y), (lck_z -. _y));
+			let dReduction = depl#length in
+           		depl#normalize;
+          
+            		let d2 = new BasicTypes.vector2 in
+			d2#set_x (depl#get_x);
+			d2#set_y (depl#get_z);
+            		let reduction = d2#length in
+            		d2#normalize;
+
+           	 	let x =
+			(
+           		if (d2#get_y <= 0.) then
+			 	((pi) *. 2.) -. acos(d2#get_x) +. factor
+			else
+				acos(d2#get_x) +. factor
+			) in
+
+                	d2#set_x (cos(x));
+                	d2#set_y (sin(x));
+ 
+            		depl#set_x (d2#get_x *. reduction);
+            		depl#set_z (d2#get_y *. reduction);
+
+            		(*_LookAt = _Position + Depl;*)
+			lck_x <- _x +. (depl#get_x *. dReduction);
+			lck_y <- _y +. (depl#get_y *. dReduction);
+			lck_z <- _z +. (depl#get_z *. dReduction);
+
+
 		method move_forward (factor:float) =
 			let vectx = (lck_x -. _x) in
 			let vecty = (lck_y -. _y) in
@@ -440,10 +525,22 @@ class mesh = object(self)
 		GlDraw.ends();
 		GlList.ends();
 		_locked <- true;
+	method unlock =
+		if _locked then
+			begin
+			GlList.delete gllist;
+			_locked <- false;
+			end
+		else
+			begin
+			_locked <- false;
+			end
+
 	method tesselate (img:BasicTypes.image) = 
 		Analyzer.tesselate img self;
 	
 	method create_map (img:BasicTypes.image) (c:BasicTypes.color list) (f:float list) =
+		self#unlock;		
 		plg_list <- [];
 		self#add_grild 0 0 256 (img#width - 1) (img#height - 1);
 		let colorblur = img#clone in
@@ -456,6 +553,9 @@ class mesh = object(self)
 		Analyzer.blur img;
 		self#apply_height (img);
 		self#lock;
+		
+		
+	
 end;;
 
 
@@ -579,22 +679,30 @@ class display =
 		val mutable _h = 480.0
 		val mutable _bgcolor = new BasicTypes.color;
 		val mutable _wireframe = false;
+		val mutable _sprites = true;
 		val mutable moving_up = false;
 		val mutable moving_dw = false;
 		val mutable moving_lf = false;
 		val mutable moving_rg = false;
 		val mutable is_event = false;
 		val mutable c_cam = new camera;
-		(*get the current camera*)
+ 		(*get the current camera*)
 		method get_camera = c_cam;
 		method toggle_wireframe =  _wireframe <- (if _wireframe then false else true)
+		method toggle_sprites = _sprites <- (if _sprites then false else true)
+		method toggle_camera = if c_cam#is_bird_mode then c_cam#normal_mode else c_cam#bird_mode
+		method clear_sprites = _sprite_list <- [];
 		method set_background_color c = _bgcolor <- c;
 		method draw_meshes = 
 			let drawmesh (m:mesh) = m#draw in
 			List.iter drawmesh _mesh_list;
 		method draw_sprites = 
+			if _sprites then
 			let drawspr (s:sprite) = s#draw in
 			List.iter drawspr _sprite_list;
+			else
+			();
+				
 		method draw_boxes = 
 			let drawbox (b:box) = b#draw in
 			List.iter drawbox _box_list;
@@ -637,15 +745,17 @@ class display =
 			GlMat.scale ~x:(1.0) ~y:(-1.0) ~z:1.0 ();
 			GlMat.translate ~x:(-1.0) ~y:(-1.0) ~z:0.0 ();
 			GlMat.scale ~x:(2.0) ~y:2.0 ~z:1.0 ();
+			
 			self#draw_sprites;
 			self#draw_boxes;
+	
 			GlMat.pop();
 			Gl.disable `blend;
 			(*finalize*)
 			Gl.flush();
 
 
-	
+		
 
 		method test_click (x,y) = 
 			let clickspr (s:sprite)  = s#click(float_of_int(x) /. _w,float_of_int(y)/. _h) in
@@ -654,26 +764,41 @@ class display =
 			is_event = true;
 		method disable_event = 
 			is_event = false;
+		method camera_forward =
+			if c_cam#is_bird_mode then
+			c_cam#move_up_down 0.03
+			else
+			c_cam#move_forward 0.1
 
-		method camera_up_on =
-			moving_up = true;
-		method camera_up_off =
-			moving_up = false;
+		method camera_backward =
+			if c_cam#is_bird_mode then
+				c_cam#move_up_down (-0.03)
+			else
+				c_cam#move_backward 0.1
 
-		method camera_down_on =
-			moving_dw = true;
-		method camera_down_off =
-			moving_dw = false;
+		method camera_up =
+			if c_cam#is_bird_mode then
+				c_cam#move_forward 0.1
+			else
+				c_cam#move (0.0, 0.0, 0.1)
 
-		method camera_left_on =
-			moving_lf = true;
-		method camera_left_off =
-			moving_lf = false;
+		method camera_down =
+			if c_cam#is_bird_mode then
+				c_cam#move_backward 0.1
+			else
+				c_cam#move (0.0, 0.0, -0.1)
 
-		method camera_right_on =
-			moving_rg = true;
-		method camera_right_off =
-			moving_rg = false;
+		method camera_left =
+			if c_cam#is_bird_mode then
+				c_cam#move_left_right (-0.1)
+			else
+				c_cam#move (0.1, 0.0, 0.0)
+
+		method camera_right =
+			if c_cam#is_bird_mode then
+				c_cam#move_left_right (0.1)
+			else
+				c_cam#move (-0.1, 0.0, 0.0)
 
 		method update =
 			if is_event then
