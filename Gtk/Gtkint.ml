@@ -16,7 +16,7 @@ class colorlist = object(self)
 				rem l
 		in
 		rem scrolled_panel#children;
-		
+
 		columnlist <- new GTree.column_list;
 		let str_col = columnlist#add Gobject.Data.string in
 		let fl_col  = columnlist#add Gobject.Data.float in
@@ -52,7 +52,7 @@ class colorlist = object(self)
 		();
 	method get_color_list = clist;
 	method get_height_list = flist;
-	method create_color_list (img:BasicTypes.image) = 
+	method create_color_list (img:BasicTypes.image) =
 		let clist = Analyzer.get_image_colors img in
 		let rec foreach = function
 			|[] -> ()
@@ -76,11 +76,11 @@ class colorlist = object(self)
 		flist <- (scol (flist, slist));
 		self#refresh;
 		();
-	
+
 end;;
 
 let engine_load_map file display map3D clist =
-	print_string ("chargement du fichier : " ^ file); flush stdout;
+	print_string ("Chargement du fichier : " ^ file); flush stdout;
 	let img = new BasicTypes.image 1 1 in
 	img#load_file file;
 	clist#create_color_list img;
@@ -103,7 +103,7 @@ let gtk_select_height glade clist =
 		(*FIX ME definir les evenement adequat*)
 		hselector#show
 
-let gtk_help glade = 
+let gtk_help glade =
 	let help = new GWindow.window
 		(GtkWindow.Window.cast(Glade.get_widget glade "help"))in
 		help#show
@@ -147,11 +147,12 @@ let right_bar clist () =
 			~border_width:4
 			~height:200
 			~width:200() in
-		
+
 		vpaned#add1 clist#create;
 		(*FIX ME : la création de tout sauf de la liste de couleur*)
 		vpaned#coerce
-let on_area_key_press display openGLArea (key:GdkEvent.Key.t) = 
+
+let on_area_key_press display openGLArea (key:GdkEvent.Key.t) =
 	let keystr = GdkEvent.Key.string key in
 	let update = function
 		|"z" ->begin display#camera_up; (); end
@@ -170,7 +171,7 @@ let on_area_key_press display openGLArea (key:GdkEvent.Key.t) =
 		true
 
 
-let default_map file window display map3D clist = 
+let default_map file window display map3D clist =
 	if file = "" then
 		gtk_open_bitmap window display map3D clist
 	else
@@ -181,7 +182,7 @@ let gtk_init file () =
 	Glade.init ();
 	let glade =  Glade.create ~file:"Resources/glade1.glade" () in
 
-	
+
 	let help = new GWindow.window
 		(GtkWindow.Window.cast(Glade.get_widget glade "help"))in
 
@@ -189,6 +190,8 @@ let gtk_init file () =
 	begin
 		let clist = new colorlist in
 		let _ = window#connect#destroy ~callback:destroy in
+		let map3D = new Engine.mesh in
+		let display = new Engine.display in
 		let vpaned = GPack.paned `VERTICAL ~border_width:0 ~packing:window#add ~height:35() in
 			let toolbar = GButton.toolbar
 				~orientation:`HORIZONTAL
@@ -198,6 +201,18 @@ let gtk_init file () =
 				~packing:vpaned#add1() in
 				(*ajout dans la partie haute du VPanel*)
 				(*FIX ME : Initialisation des boutons *)
+				let butt_load = GButton.button ~packing:toolbar#add () in
+				butt_load#connect#clicked ~callback:
+					(function ()->gtk_open_bitmap window display map3D clist);
+					GMisc.label ~text:"Load" ~packing:butt_load#add ();
+				let butt_Export = GButton.button ~packing:toolbar#add () in
+				butt_Export#connect#clicked ~callback:
+					(function () -> ());
+					GMisc.label ~text:"Export" ~packing:butt_Export#add ();
+				let butt_exit = GButton.button ~packing:toolbar#add () in
+				butt_exit#connect#clicked ~callback:
+					(window#destroy) ;
+					GMisc.label ~text:"Exit" ~packing:butt_exit#add ();
 				(* NOTE : Le warning disparaitra apres initialisation *)
 		let hpaned = GPack.paned `HORIZONTAL
 					 ~packing:vpaned#add2 () in
@@ -207,8 +222,6 @@ let gtk_init file () =
 					 ~height:400
 					 ~packing:hpaned#add1 ()
 					 in
-		let map3D = new Engine.mesh in
-		let display = new Engine.display in
 		display#set_size ~width:640 ~height:480;
 		openGLArea#set_size ~width:640 ~height:480;
 		let _ = openGLArea#connect#display ~callback:(refresh3D (openGLArea) (display)) in
@@ -224,5 +237,4 @@ let gtk_init file () =
 		default_map file window display map3D clist;
 		GMain.Main.main ();
   	end
-
 
