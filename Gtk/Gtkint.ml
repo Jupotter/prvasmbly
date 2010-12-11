@@ -141,6 +141,8 @@ let refresh3D area window ()=
 	let _ = area#swap_buffers () in ()
 
 
+let clist = new colorlist
+let map3D = new Engine.mesh
 
 let right_bar clist () =
 	let vpaned = GPack.paned `VERTICAL
@@ -149,7 +151,18 @@ let right_bar clist () =
 			~width:200() in
 
 		vpaned#add1 clist#create;
-		(*FIX ME : la création de tout sauf de la liste de couleur*)
+		let hpaned = GPack.paned `HORIZONTAL
+			~border_width:4
+			~packing:vpaned#add2 () in
+			let butt_sel = GButton.button
+				~packing:hpaned#add1 () in
+			butt_sel#connect#clicked ~callback:
+				(function ()->());
+				GMisc.label ~text:"Select" ~packing:butt_sel#add ();
+			let butt_app = GButton.button ~packing:hpaned#add2 () in
+			butt_app#connect#clicked ~callback:
+				(function ()->gtk_apply_color_height map3D clist);
+				GMisc.label ~text:"Apply" ~packing:butt_app#add ();
 		vpaned#coerce
 
 let on_area_key_press display openGLArea (key:GdkEvent.Key.t) =
@@ -188,9 +201,7 @@ let gtk_init file () =
 
 	let window = GWindow.window ~width:800 ~height:480 () in
 	begin
-		let clist = new colorlist in
 		let _ = window#connect#destroy ~callback:destroy in
-		let map3D = new Engine.mesh in
 		let display = new Engine.display in
 		let vpaned = GPack.paned `VERTICAL ~border_width:0 ~packing:window#add ~height:35() in
 			let toolbar = GButton.toolbar
