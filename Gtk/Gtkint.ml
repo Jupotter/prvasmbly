@@ -6,6 +6,8 @@ class colorlist = object(self)
 	val mutable columnlist = new GTree.column_list
 	val mutable scrolled_panel = GBin.scrolled_window
     			~hpolicy:`AUTOMATIC ~vpolicy:`AUTOMATIC ~height: 400()
+	val mutable list_view = GTree.view ()
+	val mutable col_list = [];
 	method get_img = img;
 	method set_img i = img <- i;
 	method refresh = ();
@@ -19,10 +21,12 @@ class colorlist = object(self)
 
 		columnlist <- new GTree.column_list;
 		let str_col = columnlist#add Gobject.Data.string in
-		let fl_col  = columnlist#add Gobject.Data.float in
+		col_list <- str_col::[];
+		let fl_col = columnlist#add Gobject.Data.float in
 		let model = GTree.list_store columnlist in
-		let list_view = GTree.view ~model ~packing:scrolled_panel#add () in
-
+		(*let list_view = GTree.view ~model ~packing:scrolled_panel#add () in
+*)
+		list_view  <- GTree.view ~model ~packing:scrolled_panel#add ();
 		let rec put_list = function
 			|([],[]) -> ()
 			|(hf::tf,hs::ts) ->
@@ -77,6 +81,16 @@ class colorlist = object(self)
 		self#refresh;
 		();
 
+	method get_string () =
+	let selection = list_view#selection in
+	let model = list_view#model in
+	match (selection#get_selected_rows,col_list) with
+		|(r::_,c::_) ->
+			let row = model#get_iter r in
+			let col = model#get ~row ~column:c in
+			col
+		|_ -> ""
+
 end;;
 
 let engine_load_map file display map3D clist =
@@ -103,6 +117,7 @@ let gtk_select_height glade clist =
 	let hselector = new GWindow.window
 		(GtkWindow.Window.cast(Glade.get_widget glade "hselector"))in
 		(*FIX ME definir les evenement adequat*)
+		let str = clist#get_string () in
 		hselector#show
 
 let gtk_help glade =
@@ -242,7 +257,7 @@ let gtk_init file () =
 		openGLArea#misc#set_sensitive true;
 		openGLArea#misc#set_can_focus true;
 		openGLArea#misc#set_can_default true;
-		let _ = 
+		let _ =
 			openGLArea#event#connect#key_press
 				~callback:(on_area_key_press display openGLArea) in
 		display#add_mesh map3D;
@@ -250,7 +265,7 @@ let gtk_init file () =
 		openGLArea#make_current();
 		openGLArea#swap_buffers ();
 		default_map file window display map3D clist;
-		
+
 		GMain.Main.main ();
   	end
 
