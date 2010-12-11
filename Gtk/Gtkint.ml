@@ -5,7 +5,7 @@ class colorlist = object(self)
 	val mutable img = new BasicTypes.image 1 1
 	val mutable columnlist = new GTree.column_list
 	val mutable scrolled_panel = GBin.scrolled_window
-    			~hpolicy:`AUTOMATIC ~vpolicy:`AUTOMATIC ()
+    			~hpolicy:`AUTOMATIC ~vpolicy:`AUTOMATIC ~height: 400()
 	method get_img = img;
 	method set_img i = img <- i;
 	method refresh = ();
@@ -38,8 +38,8 @@ class colorlist = object(self)
 			~renderer:(renderer, ["text",str_col]) () in
 		let fcolumn=GTree.view_column ~title:"Height"
 			~renderer:(renderer, ["text",fl_col]) () in
-		list_view#append_column scolumn;
-		list_view#append_column fcolumn;
+		let _ = list_view#append_column scolumn in
+		let _ = list_view#append_column fcolumn in
 
 		();
 
@@ -90,12 +90,14 @@ let engine_load_map file display map3D clist =
 	display#add_sprite minimap;
 	minimap#set_size (0.2,0.2);
 	minimap#set_position (0.75, 0.05);
-
+	display#get_camera#reset_position;
+	display#get_camera#set_cursor (0.75, 0.05) ((2.0 /.  float_of_int(img#width)),(2.0 /.  float_of_int(img#height)));
 	map3D#create_map img#clone clist#get_color_list clist#get_height_list
 
 
 let gtk_apply_color_height map3D clist =
-	map3D#create_map clist#get_img#clone clist#get_color_list clist#get_height_list
+	map3D#create_map (clist#get_img#clone) (clist#get_color_list) (clist#get_height_list);
+	()
 
 let gtk_select_height glade clist =
 	let hselector = new GWindow.window
@@ -141,10 +143,8 @@ let refresh3D area window ()=
 	let _ = area#swap_buffers () in ()
 
 
-let clist = new colorlist
-let map3D = new Engine.mesh
 
-let right_bar clist () =
+let right_bar clist glade map3D () =
 	let vpaned = GPack.paned `VERTICAL
 			~border_width:4
 			~height:200
@@ -152,17 +152,16 @@ let right_bar clist () =
 
 		vpaned#add1 clist#create;
 		let hpaned = GPack.paned `HORIZONTAL
-			~border_width:4
-			~packing:vpaned#add2 () in
-			let butt_sel = GButton.button
-				~packing:hpaned#add1 () in
-			butt_sel#connect#clicked ~callback:
-				(function ()->());
-				GMisc.label ~text:"Select" ~packing:butt_sel#add ();
-			let butt_app = GButton.button ~packing:hpaned#add2 () in
-			butt_app#connect#clicked ~callback:
-				(function ()->gtk_apply_color_height map3D clist);
-				GMisc.label ~text:"Apply" ~packing:butt_app#add ();
+			~border_width:0
+			~height:50
+			~width:100
+			~packing: vpaned#add2 () in
+		let button_apply = GButton.button ~label:"Appliquer" ~packing:hpaned#add2 () in
+			let _ = button_apply#connect#clicked ~callback:(fun _ -> (gtk_apply_color_height map3D clist)) in
+
+		let button_set = GButton.button ~label:"Définir" ~packing:hpaned#add1 () in
+			let _ = button_set#connect#clicked ~callback:(gtk_select_height glade clist) in
+		(*FIX ME : la création de tout sauf de la liste de couleur*)
 		vpaned#coerce
 
 let on_area_key_press display openGLArea (key:GdkEvent.Key.t) =
@@ -195,13 +194,11 @@ let gtk_init file () =
 	Glade.init ();
 	let glade =  Glade.create ~file:"Resources/glade1.glade" () in
 
-
-	let help = new GWindow.window
-		(GtkWindow.Window.cast(Glade.get_widget glade "help"))in
-
 	let window = GWindow.window ~width:800 ~height:480 () in
 	begin
+		let clist = new colorlist in
 		let _ = window#connect#destroy ~callback:destroy in
+		let map3D = new Engine.mesh in
 		let display = new Engine.display in
 		let vpaned = GPack.paned `VERTICAL ~border_width:0 ~packing:window#add ~height:35() in
 			let toolbar = GButton.toolbar
@@ -213,21 +210,26 @@ let gtk_init file () =
 				(*ajout dans la partie haute du VPanel*)
 				(*FIX ME : Initialisation des boutons *)
 				let butt_load = GButton.button ~packing:toolbar#add () in
-				butt_load#connect#clicked ~callback:
-					(function ()->gtk_open_bitmap window display map3D clist);
-					GMisc.label ~text:"Load" ~packing:butt_load#add ();
+					let _ = butt_load#connect#clicked ~callback:
+						(function () ->gtk_open_bitmap window display map3D clist) in
+						let _ = GMisc.label ~text:"Chargement" ~packing:butt_load#add () in
 				let butt_Export = GButton.button ~packing:toolbar#add () in
-				butt_Export#connect#clicked ~callback:
-					(function () -> ());
-					GMisc.label ~text:"Export" ~packing:butt_Export#add ();
+					let _ = butt_Export#connect#clicked ~callback:
+						(function () -> ()) in
+						let _ = GMisc.label ~text:"Exportation" ~packing:butt_Export#add () in
 				let butt_exit = GButton.button ~packing:toolbar#add () in
-				butt_exit#connect#clicked ~callback:
-					(window#destroy) ;
-					GMisc.label ~text:"Exit" ~packing:butt_exit#add ();
+					let _ = butt_exit#connect#clicked ~callback:
+						(window#destroy) in
+						let _ = GMisc.label ~text:"Quitter" ~packing:butt_exit#add () in
+				let butt_help = GButton.button ~packing:toolbar#add () in
+					let _ = butt_help#connect#clicked ~callback:
+						(gtk_help glade) in
+						let _ = GMisc.label ~text:"Aide" ~packing:butt_help#add () in
+
 				(* NOTE : Le warning disparaitra apres initialisation *)
 		let hpaned = GPack.paned `HORIZONTAL
 					 ~packing:vpaned#add2 () in
-		hpaned#add2 (right_bar clist());
+		hpaned#add2 (right_bar clist glade map3D ());
 		let openGLArea = GlGtk.area [`USE_GL; `RGBA; `DOUBLEBUFFER; `DEPTH_SIZE 16]
 					 ~width:600
 					 ~height:400
@@ -240,12 +242,15 @@ let gtk_init file () =
 		openGLArea#misc#set_sensitive true;
 		openGLArea#misc#set_can_focus true;
 		openGLArea#misc#set_can_default true;
-		openGLArea#event#connect#key_press ~callback:(on_area_key_press display openGLArea);
+		let _ = 
+			openGLArea#event#connect#key_press
+				~callback:(on_area_key_press display openGLArea) in
 		display#add_mesh map3D;
 		window#show ();
 		openGLArea#make_current();
 		openGLArea#swap_buffers ();
 		default_map file window display map3D clist;
+		
 		GMain.Main.main ();
   	end
 

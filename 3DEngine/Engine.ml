@@ -6,8 +6,31 @@ class camera = object(self)
 		val mutable lck_x = 0.0
 		val mutable lck_y = 0.1
 		val mutable lck_z = 5.0
+		val mutable _cursor_offset_x = 0.0
+		val mutable _cursor_offset_y = 0.0
+		val mutable _cursor_size_x = 0.02
+		val mutable _cursor_size_y = 0.02
 		val mutable bird_mode = false;
 		method is_bird_mode = bird_mode;
+		method set_cursor (x,y) (sx,sy) =
+			_cursor_offset_x <- x;
+			_cursor_offset_y <- y;
+			_cursor_size_x <- sx;
+			_cursor_size_y <- sy;			
+
+		method draw_camera_position =
+			GlMat.push();
+			GlMat.translate 
+				~x:(_x *. _cursor_size_x  +. _cursor_offset_x)
+				~y:(_z*._cursor_size_y   +. _cursor_offset_y)
+				~z:0.0 ();
+			GlDraw.begins `triangles;
+				GlDraw.color ~alpha:1.0 (1.0,0.5,0.0);
+				GlDraw.vertex3 (0.01, 0.01, 0.0);
+				GlDraw.vertex3 (0.0, 0.0, 0.0);
+				GlDraw.vertex3 (0.02, 0.0, 0.0);
+			GlDraw.ends();
+			GlMat.pop();
 		method reset_position =
 			_x <- 0.0;
 			_y <- 9.0;
@@ -702,7 +725,11 @@ class display =
 			List.iter drawspr _sprite_list;
 			else
 			();
-				
+		method draw_minimap = 
+			if _sprites then
+				(c_cam#draw_camera_position;)
+			else
+				();
 		method draw_boxes = 
 			let drawbox (b:box) = b#draw in
 			List.iter drawbox _box_list;
@@ -712,6 +739,7 @@ class display =
 			_sprite_list <- s::_sprite_list;
 		method add_box b = 
 			_box_list <- b::_box_list;
+
 		method set_size ~width ~height =
 				GlDraw.viewport 0 0 width height
 		(*drawing method*)
@@ -745,7 +773,7 @@ class display =
 			GlMat.scale ~x:(1.0) ~y:(-1.0) ~z:1.0 ();
 			GlMat.translate ~x:(-1.0) ~y:(-1.0) ~z:0.0 ();
 			GlMat.scale ~x:(2.0) ~y:2.0 ~z:1.0 ();
-			
+			self#draw_minimap;
 			self#draw_sprites;
 			self#draw_boxes;
 	
