@@ -149,7 +149,7 @@ let out = i in
 			       i#get_pixel x (y+1)) in
 		let (h,hx,hy)=(get_height p, get_height px, get_height py) in
 			let v = new BasicTypes.vector3 in
-				v#set_xyz ((hx-.h),1.,(hy-.h));
+				v#set_xyz ((hx-.h),0.1,(hy-.h));
 				v#make_uniform;
 				let col = new BasicTypes.color in
 				col#set_rgb_pck (v#get_xyz);
@@ -162,7 +162,7 @@ let out = i in
 			    i#get_pixel (x+1) y) in
 		let (h,hx)=(get_height p, get_height px) in
 			let v = new BasicTypes.vector3 in
-				v#set_xyz ((hx-.h),1.,0.);
+				v#set_xyz ((hx-.h),0.1,0.);
 				v#make_uniform;
 				let col = new BasicTypes.color in
 				col#set_rgb_pck (v#get_xyz);
@@ -174,7 +174,7 @@ let out = i in
 			    i#get_pixel x (y+1)) in
 		let (h,hy)=(get_height p, get_height py) in
 			let v = new BasicTypes.vector3 in
-				v#set_xyz (0.,1.,(hy-.h));
+				v#set_xyz (0.,0.1,(hy-.h));
 				v#make_uniform;
 				let col = new BasicTypes.color in
 				col#set_rgb_pck (v#get_xyz);
@@ -187,7 +187,12 @@ out
 let apply_height (c:BasicTypes.color list) (f:float list) (i:BasicTypes.image) =
 	let rec set_height (cl:BasicTypes.color list) (hl:float list) (color_in:BasicTypes.color) =
 	 	match (cl,hl) with
-			|([],[]) -> new BasicTypes.color
+			|([],[]) -> 
+				let result = new BasicTypes.color in
+				result#set_rgb 1. 0. 0.;
+				print_string color_in#to_string;
+				flush stdout; 
+				result
 			|([], _) -> new BasicTypes.color
 			|(_, []) -> new BasicTypes.color
 			|(col::cl, h::hl) ->
@@ -201,7 +206,6 @@ let apply_height (c:BasicTypes.color list) (f:float list) (i:BasicTypes.image) =
 	i#foreach_pixel (set_height c f);;
 
 (* Get Image Color *)
-
 let rec is_not_in_list cl (c: BasicTypes.color) =
 	let rec call = function
 	    | [] -> true
@@ -265,3 +269,20 @@ let blur (img:BasicTypes.image) =
 		done;	
 	done;
 	end
+let lightmap (img:BasicTypes.image) (light: BasicTypes.vector3) =
+	let compute_dot color = 
+		let v = (light#dot (color#to_vector) *. 2.0)  in
+		let r = (v*.v) /. (4.0) in
+				let result = new BasicTypes.color in
+				result#set_rgb_pck  (r,r,r);
+				result
+	in
+	img#foreach_pixel compute_dot;
+	()
+let correct_image (img:BasicTypes.image) =
+	
+	let corr c = (c#correct; c) in
+	img#foreach_pixel corr;
+	blur img;
+	img#foreach_pixel corr; 
+

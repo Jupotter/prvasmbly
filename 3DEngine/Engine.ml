@@ -518,7 +518,16 @@ class mesh = object(self)
 		self#iter app_plg; 
 	method apply_lightmap (img:BasicTypes.image) =
 		let app_plg (p:polygon) = p#apply_lightmap img in
-		self#iter app_plg; 
+		self#iter app_plg;	
+		let _ = if _locked then
+				begin			
+				self#unlock;
+				self#lock
+				end
+			else
+			()
+		in
+		()
 	method apply_color (img:BasicTypes.image) =
 		let app_plg (p:polygon) = p#apply_color img in
 		self#iter app_plg;	
@@ -569,7 +578,6 @@ class mesh = object(self)
 		let colorblur = img#clone in
 		Analyzer.blur colorblur;
 		self#tesselate colorblur#clone;
-		
 		
 		self#apply_color (colorblur);
 		Analyzer.apply_height c f img;
